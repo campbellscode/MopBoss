@@ -11,10 +11,19 @@ import { Why } from '@/components/home/Why';
 import { PageShell } from '@/components/layout/PageShell';
 import { CtaBand } from '@/components/sections/CtaBand';
 import { home } from '@/content';
+import logo from '@/assets/brand/mopboss-logo.png';
+import { siteUrl } from '@/content/seo';
+import { jsonLdString, localBusinessJsonLd } from '@/lib/structuredData';
 
 export default function HomePage() {
   return (
     <PageShell page="home">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdString(localBusinessJsonLd(`${siteUrl}${logo.src}`)),
+        }}
+      />
       <div className={homeStyles.home}>
         <Hero />
         <Marquee />
