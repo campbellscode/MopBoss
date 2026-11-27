@@ -32,7 +32,8 @@ namespace MopBoss.Server
             var origins = config.GetSection("Site:AllowedOrigins").Get<string[]>() ?? [];
             var connectionString = config.GetConnectionString(StartupValidation.ConnectionStringName);
 
-            var (dbTarget, errors) = StartupValidation.ValidateDatabase(env, connectionString);
+            var otherConnectionNames = config.GetSection("ConnectionStrings").GetChildren().Select(c => c.Key);
+            var (dbTarget, errors) = StartupValidation.ValidateDatabase(env, connectionString, otherConnectionNames);
             errors.AddRange(StartupValidation.ValidateSmtp(env, smtp));
             errors.AddRange(StartupValidation.ValidateNotifications(env, notifications, smtp));
             errors.AddRange(StartupValidation.ValidateReverseProxy(proxy));

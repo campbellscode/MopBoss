@@ -32,6 +32,18 @@ public class StartupValidationTests
     {
         var (_, errors) = StartupValidation.ValidateDatabase(environment, "");
         Assert.Contains(errors, e => e.Contains("no fallback"));
+        Assert.DoesNotContain(errors, e => e.Contains("Found"));
+    }
+
+    [Fact]
+    public void A_missing_connection_string_names_other_keys_but_never_uses_them()
+    {
+        var (target, errors) = StartupValidation.ValidateDatabase(
+            "Development", null, ["DefaultConnection", "Legacy"]);
+        Assert.Null(target); // still no fallback
+        var error = Assert.Single(errors);
+        Assert.Contains("Found ConnectionStrings:DefaultConnection, ConnectionStrings:Legacy instead", error);
+        Assert.Contains("rename that key", error);
     }
 
     [Theory]

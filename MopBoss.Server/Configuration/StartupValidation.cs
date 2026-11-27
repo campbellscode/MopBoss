@@ -24,16 +24,29 @@ public static class StartupValidation
         _ => null,
     };
 
+    /// <param name="otherConnectionNames">
+    /// Names (never values) of any other ConnectionStrings entries, used only to point out a
+    /// likely misnamed key such as Visual Studio's default "DefaultConnection". They are never used.
+    /// </param>
     public static (DatabaseTarget? Target, List<string> Errors) ValidateDatabase(
-        string environment, string? connectionString)
+        string environment, string? connectionString, IEnumerable<string>? otherConnectionNames = null)
     {
         var errors = new List<string>();
         if (string.IsNullOrWhiteSpace(connectionString))
         {
+            var others = (otherConnectionNames ?? [])
+                .Where(n => !string.Equals(n, ConnectionStringName, StringComparison.OrdinalIgnoreCase))
+                .Order(StringComparer.OrdinalIgnoreCase)
+                .Select(n => $"ConnectionStrings:{n}")
+                .ToList();
+            var hint = others.Count == 0
+                ? ""
+                : $" Found {string.Join(", ", others)} instead; this API reads only " +
+                  $"ConnectionStrings:{ConnectionStringName}, so rename that key if it is the right one.";
             errors.Add(
                 $"ConnectionStrings:{ConnectionStringName} is not set for the {environment} environment. " +
                 "There is deliberately no fallback. Use user secrets in Development and an " +
-                "environment variable or secret manager in Production.");
+                "environment variable or secret manager in Production." + hint);
             return (null, errors);
         }
 
