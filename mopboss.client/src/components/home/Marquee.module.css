@@ -1,0 +1,60 @@
+.band {
+  background: var(--color-ink);
+  color: var(--color-white);
+  padding: 22px 0;
+  overflow: hidden;
+  transform: rotate(-1.4deg) scale(1.03);
+  margin: 6px 0 0;
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+  animation: marquee 30s linear infinite;
+}
+
+.run {
+  padding-right: 40px;
+  white-space: nowrap;
+}
+
+.star {
+  color: var(--color-boss-pink);
+}
+
+.mobile {
+  display: none;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .band {
+    padding: 16px 0;
+    transform: rotate(-2deg) scale(1.04);
+    margin: 0;
+  }
+
+  .track {
+    font-size: 17px;
+    animation-duration: 24s;
+  }
+
+  .run {
+    padding-right: 26px;
+  }
+
+  .desktop {
+    display: none;
+  }
+
+  .mobile {
+    display: flex;
+  }
+}

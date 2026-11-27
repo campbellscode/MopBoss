@@ -1,0 +1,467 @@
+/* ---------- The Clean Sweep ---------- */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-white);
+}
+
+.grime {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: #c8beac30;
+  clip-path: inset(0 0 0 100%);
+}
+
+.blob {
+  position: absolute;
+}
+
+.specks {
+  inset: 0;
+  background-image:
+    radial-gradient(#7d7260 1.3px, #0000 1.9px), radial-gradient(#7d7260 1px, #0000 1.6px);
+  background-size:
+    37px 41px,
+    53px 47px;
+  background-position:
+    0 0,
+    19px 23px;
+  opacity: 0.55;
+}
+
+.specksMobile {
+  background-size:
+    31px 37px,
+    43px 41px;
+  background-position:
+    0 0,
+    17px 21px;
+}
+
+.squiggle {
+  position: absolute;
+}
+
+.mop {
+  position: absolute;
+  top: 6%;
+  left: 0;
+  height: 90%;
+  z-index: 4;
+  pointer-events: none;
+  transform: translateX(120vw);
+}
+
+.go .grime {
+  animation: grimeWipe 1.7s 0.5s var(--ease-sweep) both;
+}
+
+.go .mop {
+  animation: mopMove 1.7s 0.5s var(--ease-sweep) both;
+}
+
+.go .clean {
+  animation: wordWipe 0.55s 0.85s ease-out both;
+}
+
+.go .late {
+  animation: fadeIn 0.9s 2s both;
+}
+
+/* ---------- Layout ---------- */
+
+.layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 40px 24px;
+  min-height: 760px;
+  padding-top: 48px;
+  padding-bottom: 68px;
+}
+
+.copy {
+  flex: 1.6 1 600px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 28px;
+}
+
+.title {
+  font-size: var(--fs-h1);
+  line-height: 1;
+}
+
+.line {
+  display: block;
+}
+
+.titleAccent {
+  font-size: 1.14em;
+  line-height: 0.8;
+}
+
+.mess {
+  position: relative;
+  display: inline-block;
+}
+
+.dirty {
+  color: #bdb3a2;
+}
+
+.clean {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--color-boss-pink);
+  -webkit-text-stroke: 5px var(--color-ink);
+  paint-order: stroke fill;
+  text-shadow: 6px 6px 0 var(--color-ink);
+}
+
+.lead {
+  margin: 0;
+  max-width: 520px;
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+  color: var(--color-body-grey);
+}
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px 16px;
+  padding-top: 6px;
+}
+
+.call {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14.5px;
+  color: var(--color-body-grey);
+}
+
+.call a {
+  font-weight: 700;
+  color: var(--color-deep-pink);
+}
+
+.underline {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-ink);
+  font: 700 11.5px/1 var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+/* ---------- Visual: orb, ring, medallion, bubbles ---------- */
+
+.visual {
+  position: relative;
+  flex: 1 1 380px;
+  min-width: 0;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orb {
+  position: absolute;
+  right: -9%;
+  top: 0;
+  width: min(330px, 62%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 26%, #ff9ccb 0, #fc1d8a 46%, #d6006c 100%);
+  box-shadow: inset -20px -26px 60px #0000002b;
+}
+
+.ring {
+  width: min(585px, 104%);
+}
+
+.medallion {
+  position: relative;
+  width: min(430px, 76%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--color-logo-ground);
+  box-shadow:
+    0 0 0 8px var(--color-boss-pink),
+    0 0 0 16px var(--color-ink),
+    0 54px 80px -34px #d6006cb3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  display: block;
+  width: 88%;
+  height: auto;
+}
+
+.decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.px1 {
+  transform: translate(calc(var(--mx, 0) * -10px), calc(var(--my, 0) * -8px));
+  transition: transform 0.5s ease-out;
+}
+
+.px2 {
+  transform: translate(calc(var(--mx, 0) * 18px), calc(var(--my, 0) * 12px));
+  transition: transform 0.5s ease-out;
+}
+
+/* ---------- Replay button ---------- */
+
+.replay {
+  position: absolute;
+  right: 24px;
+  bottom: 20px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-ink);
+  background: var(--color-white);
+  color: var(--color-ink);
+  font: 600 12.5px/1 var(--font-body);
+  cursor: pointer;
+}
+
+.replay:hover {
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+
+.mobileOnly {
+  display: none;
+}
+
+/* ---------- Mobile composition ---------- */
+
+@media (max-width: 767.98px) {
+  .desktopOnly {
+    display: none !important;
+  }
+
+  .mobileOnly {
+    display: revert;
+  }
+
+  .decor.mobileOnly,
+  .ringMobile {
+    display: block;
+  }
+
+  .hero {
+    padding: 24px 0 34px;
+  }
+
+  .mop {
+    top: 4%;
+    height: 70%;
+    transform: translateX(140vw);
+  }
+
+  .go .grime {
+    animation-duration: 1.5s;
+  }
+
+  .go .mop {
+    animation: mopMoveMobile 1.5s 0.5s var(--ease-sweep) both;
+  }
+
+  .go .clean {
+    animation-duration: 0.5s;
+    animation-delay: 0.8s;
+  }
+
+  .layout {
+    display: block;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .copy {
+    padding: 0 var(--gutter-mobile);
+    gap: 18px;
+    align-items: stretch;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    gap: 10px;
+  }
+
+  .eyebrow > span {
+    width: 24px;
+  }
+
+  .title {
+    font-size: 39px;
+    line-height: 1.02;
+  }
+
+  .titleAccent {
+    font-size: 1.16em;
+  }
+
+  .clean {
+    -webkit-text-stroke-width: 4px;
+    text-shadow: 4px 4px 0 var(--color-ink);
+  }
+
+  .lead {
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+
+  .ctas {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    padding-top: 4px;
+  }
+
+  .ctas > span {
+    display: block;
+    padding: 0;
+    margin: 0;
+  }
+
+  .primaryCta {
+    display: flex;
+    width: 100%;
+    min-height: 60px;
+    padding: 0 24px;
+    gap: 10px;
+    font-size: 12.5px;
+    letter-spacing: 0.05em;
+  }
+
+  .primaryCta::after {
+    display: none;
+  }
+
+  .primaryCta:active {
+    transform: translateY(4px);
+  }
+
+  .underline.mobileOnly {
+    display: inline-flex;
+    align-self: center;
+  }
+
+  .visual {
+    margin-top: 14px;
+    height: 360px;
+    min-height: 0;
+    transform: none;
+  }
+
+  .orb {
+    right: -40px;
+    top: 6px;
+    width: 190px;
+    height: 190px;
+    box-shadow: none;
+  }
+
+  .ringMobile {
+    width: 356px;
+    height: 356px;
+  }
+
+  .medallion {
+    width: 262px;
+    height: 262px;
+    box-shadow:
+      0 0 0 6px var(--color-boss-pink),
+      0 0 0 12px var(--color-ink),
+      0 36px 50px -24px #d6006cb3;
+  }
+
+  .replay {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grime,
+  .mop {
+    display: none;
+  }
+}
+
+@keyframes grimeWipe {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+
+@keyframes mopMove {
+  from {
+    transform: translateX(-26vw);
+  }
+  to {
+    transform: translateX(104vw);
+  }
+}
+
+/* The prototype sweeps from -200px to 460px on a 390px screen; the end point is
+   expressed against the viewport so wider phones are swept fully too. */
+@keyframes mopMoveMobile {
+  from {
+    transform: translateX(-200px);
+  }
+  to {
+    transform: translateX(calc(100vw + 70px));
+  }
+}
+
+@keyframes wordWipe {
+  from {
+    clip-path: inset(-15% 104% -20% -5%);
+  }
+  to {
+    clip-path: inset(-15% -8% -20% -5%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
