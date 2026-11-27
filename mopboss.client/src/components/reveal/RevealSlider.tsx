@@ -11,12 +11,15 @@ export const SWEEP_MS = 1800;
 const SWEEP_FROM = 2;
 
 /** Ease-out cubic, as in the prototype's "Sweep it for me". */
+/** Fill the "{pct}" token in a status format string. */
+export const formatStatus = (format: string, pct: number) => format.replace('{pct}', String(pct));
+
 export const easeOutCubic = (k: number) => 1 - Math.pow(1 - k, 3);
 
 type SweepOptions = {
   buttonLabel: string;
-  /** Status label, e.g. "38% spotless". Announced when a sweep finishes. */
-  statusLabel: (pct: number) => string;
+  /** Status label with a "{pct}" token, e.g. "{pct}% spotless". Announced when a sweep finishes. */
+  statusFormat: string;
 };
 
 type Props = {
@@ -62,7 +65,7 @@ export function RevealSlider({ variant = 'home', initial = 38, sweep, aside }: P
   const runSweep = () => {
     cancelSweep();
     const finish = () => {
-      if (sweep) setAnnouncement(sweep.statusLabel(100));
+      if (sweep) setAnnouncement(formatStatus(sweep.statusFormat, 100));
     };
     if (prefersReducedMotion()) {
       apply(100);
@@ -116,7 +119,7 @@ export function RevealSlider({ variant = 'home', initial = 38, sweep, aside }: P
           step={1}
           defaultValue={initial}
           aria-label={revealDemo.ariaLabel}
-          aria-valuetext={sweep ? sweep.statusLabel(pct) : undefined}
+          aria-valuetext={sweep ? formatStatus(sweep.statusFormat, pct) : undefined}
           onChange={(event) => {
             cancelSweep();
             apply(Number(event.currentTarget.value));
@@ -131,7 +134,7 @@ export function RevealSlider({ variant = 'home', initial = 38, sweep, aside }: P
                 {sweep.buttonLabel}
               </BossButton>
               <span className={`display ${styles.status}`} aria-hidden="true">
-                {sweep.statusLabel(pct)}
+                {formatStatus(sweep.statusFormat, pct)}
               </span>
               <span className="visually-hidden" role="status">
                 {announcement}

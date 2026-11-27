@@ -16,7 +16,7 @@ function mockReducedMotion(reduce: boolean) {
 
 const sweep = {
   buttonLabel: 'Sweep it for me',
-  statusLabel: (pct: number) => `${pct}% spotless`,
+  statusFormat: '{pct}% spotless',
 };
 
 function setup(withSweep = false) {

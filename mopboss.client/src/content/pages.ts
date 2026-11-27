@@ -365,7 +365,8 @@ export const galleryPage = {
   heading: ['Before. After. ', { accent: 'Ahhh.' }] as Headline,
   lead: 'The most satisfying part of the job, on repeat. Drag the mop yourself or let us sweep it for you.',
   sweep: 'Sweep it for me',
-  cleanLabel: (pct: number) => `${pct}% spotless`,
+  /** "{pct}" is replaced with the current percentage. */
+  cleanLabel: '{pct}% spotless',
   auditNote: "Illustrated demo, not a real job — Linda's real photos replace this",
   wall: {
     eyebrow: 'The transformation wall',
