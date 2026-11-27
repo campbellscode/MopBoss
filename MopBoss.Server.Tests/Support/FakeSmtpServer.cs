@@ -25,6 +25,9 @@ public sealed class FakeSmtpServer : IAsyncDisposable
     /// <summary>Reject every recipient with 550 (permanent).</summary>
     public bool RejectRecipients { get; set; }
 
+    /// <summary>Answer RCPT with this reply instead (e.g. "450 4.2.1 Mailbox busy").</summary>
+    public string? RecipientReply { get; set; }
+
     public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
 
     public FakeSmtpServer()
@@ -75,7 +78,11 @@ public sealed class FakeSmtpServer : IAsyncDisposable
                     await writer.WriteLineAsync("250 OK");
                     break;
                 case "RCPT":
-                    if (RejectRecipients)
+                    if (RecipientReply is not null)
+                    {
+                        await writer.WriteLineAsync(RecipientReply);
+                    }
+                    else if (RejectRecipients)
                     {
                         await writer.WriteLineAsync("550 5.1.1 Mailbox unavailable");
                     }

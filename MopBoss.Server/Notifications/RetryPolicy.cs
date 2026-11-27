@@ -23,14 +23,16 @@ public static class RetryPolicy
     }
 
     /// <summary>
-    /// Errors that a retry cannot fix (the relay rejected the message or an address).
-    /// Everything else, including timeouts, connection and authentication problems, is
-    /// retried until attempts run out.
+    /// Errors that a retry cannot fix. SMTP says so in the reply code: 5xx is permanent
+    /// (for example 550 mailbox unavailable, 553 bad address, 554 transaction failed),
+    /// 4xx is temporary (421 service unavailable, 450 mailbox busy or greylisted, 451
+    /// local error, 452 insufficient storage), whatever command it answered. A malformed
+    /// address can never succeed either. Everything else (timeouts, connection, TLS and
+    /// authentication problems) is retried until attempts run out.
     /// </summary>
     public static bool IsPermanent(Exception ex) => ex switch
     {
-        SmtpCommandException { ErrorCode: SmtpErrorCode.RecipientNotAccepted or SmtpErrorCode.SenderNotAccepted } => true,
-        SmtpCommandException { StatusCode: SmtpStatusCode.TransactionFailed or SmtpStatusCode.MailboxUnavailable } => true,
+        SmtpCommandException smtp => (int)smtp.StatusCode is >= 500 and < 600,
         ParseException => true,
         _ => false,
     };
