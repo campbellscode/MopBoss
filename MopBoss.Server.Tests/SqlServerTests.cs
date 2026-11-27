@@ -62,6 +62,49 @@ VALUES ('11111111-1111-1111-1111-111111111111', '2026-11-20T10:00:00+00:00', 'De
     }
 
     [Fact]
+    public async Task The_committed_idempotent_script_creates_the_schema_and_is_safe_to_rerun()
+    {
+        // database/MopBoss.migrations.idempotent.sql is what an operator reviews and runs.
+        var script = await File.ReadAllTextAsync(FindRepoFile("database/MopBoss.migrations.idempotent.sql"));
+        var batches = System.Text.RegularExpressions.Regex.Split(script, @"^\s*GO\s*$",
+                System.Text.RegularExpressions.RegexOptions.Multiline)
+            .Where(b => !string.IsNullOrWhiteSpace(b)).ToList();
+        var cs = sql.NewDatabase();
+        await using (var create = SqlServerFixture.Context(cs))
+            await create.Database.EnsureCreatedAsync(); // empty database shell only
+        await using (var reset = SqlServerFixture.Context(cs))
+        {
+            await reset.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS NotificationOutbox; DROP TABLE IF EXISTS QuoteRequests;");
+        }
+
+        for (var run = 0; run < 2; run++)
+        {
+            await using var conn = new SqlConnection(cs);
+            await conn.OpenAsync();
+            foreach (var batch in batches)
+            {
+                await using var cmd = new SqlCommand(batch, conn);
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
+
+        await using var db = SqlServerFixture.Context(cs);
+        Assert.Empty(await db.Database.GetPendingMigrationsAsync()); // script and migrations agree
+        await Service(db).SubmitAsync(Payloads.Dto(), Guid.NewGuid(), CancellationToken.None);
+        Assert.Equal(1, await db.NotificationOutbox.CountAsync());
+    }
+
+    private static string FindRepoFile(string relative)
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            var candidate = Path.Combine(dir.FullName, relative);
+            if (File.Exists(candidate)) return candidate;
+        }
+        throw new FileNotFoundException(relative);
+    }
+
+    [Fact]
     public async Task Stores_the_quote_and_its_notification_in_one_transaction()
     {
         var cs = await sql.NewMigratedDatabaseAsync();

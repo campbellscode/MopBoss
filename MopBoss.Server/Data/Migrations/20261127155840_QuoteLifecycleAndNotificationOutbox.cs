@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -26,7 +26,7 @@ namespace MopBoss.Server.Data.Migrations
                 type: "datetimeoffset",
                 nullable: false,
                 defaultValueSql: "SYSUTCDATETIME()");
-            migrationBuilder.Sql("UPDATE [QuoteRequests] SET [UpdatedAtUtc] = [CreatedAtUtc];");
+            migrationBuilder.Sql(Deferred("UPDATE [QuoteRequests] SET [UpdatedAtUtc] = [CreatedAtUtc];"));
 
             // 2. Lifecycle and idempotency columns, with values for any existing rows.
             migrationBuilder.AddColumn<Guid>(
@@ -41,9 +41,9 @@ namespace MopBoss.Server.Data.Migrations
                 name: "Reference", table: "QuoteRequests", type: "varchar(12)", unicode: false,
                 maxLength: 12, nullable: true);
             // Legacy rows: "MB-" plus nine hex digits of the existing Id (unique in practice).
-            migrationBuilder.Sql(
+            migrationBuilder.Sql(Deferred(
                 "UPDATE [QuoteRequests] SET [Reference] = 'MB-' + UPPER(LEFT(REPLACE(CONVERT(char(36), [Id]), '-', ''), 9)) " +
-                "WHERE [Reference] IS NULL;");
+                "WHERE [Reference] IS NULL;"));
             migrationBuilder.AlterColumn<string>(
                 name: "Reference", table: "QuoteRequests", type: "varchar(12)", unicode: false,
                 maxLength: 12, nullable: false, oldClrType: typeof(string), oldType: "varchar(12)",
@@ -83,7 +83,7 @@ namespace MopBoss.Server.Data.Migrations
 
             // 4. Carry over notification state before dropping the old columns.
             //    Already emailed -> Sent. Never emailed (old synchronous send failed) -> Pending.
-            migrationBuilder.Sql(@"
+            migrationBuilder.Sql(Deferred(@"
 INSERT INTO [NotificationOutbox]
     ([Id], [QuoteRequestId], [Kind], [Status], [Attempts], [NextAttemptAtUtc], [SentAtUtc],
      [LastError], [CreatedAtUtc], [UpdatedAtUtc], [ConcurrencyStamp])
@@ -93,7 +93,7 @@ SELECT NEWID(), q.[Id], 'QuoteReceived',
        SYSUTCDATETIME(), q.[NotifiedAt],
        CASE WHEN q.[NotifiedAt] IS NULL AND q.[NotificationError] IS NOT NULL THEN 'Legacy' ELSE NULL END,
        q.[CreatedAtUtc], SYSUTCDATETIME(), NEWID()
-FROM [QuoteRequests] q;");
+FROM [QuoteRequests] q;"));
             migrationBuilder.DropColumn(name: "NotificationError", table: "QuoteRequests");
             migrationBuilder.DropColumn(name: "NotifiedAt", table: "QuoteRequests");
 
@@ -130,6 +130,14 @@ FROM [QuoteRequests] q;");
         }
 
         /// <summary>
+        /// Wraps custom SQL in EXEC so SQL Server resolves column names only when it runs.
+        /// The idempotent script keeps all statements in one script, and without this, SQL
+        /// that touches columns created, renamed or dropped elsewhere fails to compile, even
+        /// inside an IF that would skip it.
+        /// </summary>
+        private static string Deferred(string sql) => $"EXEC(N'{sql.Replace("'", "''")}');";
+
+        /// <summary>
         /// Restores the Phase 2 schema. Notification history collapses back into NotifiedAt;
         /// lifecycle status, references and idempotency keys are discarded. Review before use.
         /// </summary>
@@ -140,9 +148,9 @@ FROM [QuoteRequests] q;");
             migrationBuilder.AddColumn<string>(
                 name: "NotificationError", table: "QuoteRequests", type: "nvarchar(1000)",
                 maxLength: 1000, nullable: true);
-            migrationBuilder.Sql(@"
+            migrationBuilder.Sql(Deferred(@"
 UPDATE q SET q.[NotifiedAt] = n.[SentAtUtc], q.[NotificationError] = n.[LastError]
-FROM [QuoteRequests] q JOIN [NotificationOutbox] n ON n.[QuoteRequestId] = q.[Id];");
+FROM [QuoteRequests] q JOIN [NotificationOutbox] n ON n.[QuoteRequestId] = q.[Id];"));
 
             migrationBuilder.DropTable(name: "NotificationOutbox");
 
