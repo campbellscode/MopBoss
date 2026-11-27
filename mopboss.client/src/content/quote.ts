@@ -126,6 +126,8 @@ export const quoteCopy = {
     home: 'Back to home',
     restart: 'Start over',
   },
+  /** Shown only when JavaScript is off: the form cannot work without it. */
+  noScript: 'This quote form needs JavaScript. You can also call Linda at',
   submitError:
     'Something went wrong sending your request. Please try again, or call Linda instead.',
 } as const;

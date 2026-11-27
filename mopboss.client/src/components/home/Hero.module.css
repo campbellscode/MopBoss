@@ -152,6 +152,9 @@
 }
 
 .call a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-weight: 700;
   color: var(--color-deep-pink);
 }

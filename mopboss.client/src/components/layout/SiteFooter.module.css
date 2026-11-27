@@ -60,16 +60,19 @@
 .navCol {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
 }
 
 .colHeading {
   margin-bottom: 10px;
 }
 
+/* 44px targets (the prototype used 36px); the column spacing absorbs the difference */
 .navCol a {
+  display: inline-flex;
+  align-items: center;
   color: var(--color-white);
-  min-height: 36px;
+  min-height: 44px;
   font-size: 16px;
 }
 
@@ -85,6 +88,9 @@
 }
 
 .bigPhone {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--color-white);
   font-size: 26px;
   text-decoration: none;

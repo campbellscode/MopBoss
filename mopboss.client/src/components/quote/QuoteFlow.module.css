@@ -129,6 +129,16 @@
   outline: none;
 }
 
+.noscript {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 16px 20px;
+  border: var(--outline);
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  font: 600 16px/1.5 var(--font-body);
+}
+
 .stepCol {
   flex: 1.6 1 460px;
   min-width: 0;

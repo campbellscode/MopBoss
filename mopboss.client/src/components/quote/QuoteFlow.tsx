@@ -102,7 +102,12 @@ export function QuoteFlow() {
       </div>
 
       <form className={styles.form} onSubmit={onSubmit} noValidate aria-busy={submitting}>
-        <main id="main" className={cx(styles.wrap, styles.main)}>
+        <main id="main" tabIndex={-1} className={cx(styles.wrap, styles.main)}>
+          <noscript>
+            <p className={styles.noscript}>
+              {quoteCopy.noScript} <a href={telHref}>{business.phone.display}</a>.
+            </p>
+          </noscript>
           <div className={styles.stepCol}>
             {done ? (
               <Done
