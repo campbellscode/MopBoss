@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mop Boss — Services</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Bodoni+Moda:ital,wght@1,600;1,800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#fff;color:#0B0B0C;font-family:'Poppins',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#D6006C}a:hover{color:#0B0B0C}
+:focus-visible{outline:3px solid #0B0B0C;outline-offset:3px;border-radius:10px}
+.d{font-family:'Unbounded','Arial Black',sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:-.025em;line-height:1.02;margin:0}
+.i{font-family:'Bodoni Moda','Didot',Georgia,serif;font-style:italic;font-weight:800;text-transform:none;letter-spacing:-.01em;color:#D6006C}
+.eb{font:700 12px/1 'Unbounded',sans-serif;letter-spacing:.18em;text-transform:uppercase}
+.wrap{max-width:1328px;margin:0 auto;padding:0 clamp(20px,4vw,56px)}
+.boss{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:62px;padding:0 30px;border-radius:999px;background:#FC1D8A;color:#0B0B0C;border:2.5px solid #0B0B0C;box-shadow:0 6px 0 #0B0B0C;font:900 13px/1 'Unbounded',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;overflow:hidden;cursor:pointer;transition:transform .28s cubic-bezier(.2,.9,.3,1.5),box-shadow .28s}
+.boss:hover{color:#0B0B0C;box-shadow:0 10px 0 #0B0B0C}.boss:active{box-shadow:0 2px 0 #0B0B0C}
+.boss::before{content:"";position:absolute;left:14px;right:14px;top:4px;height:40%;border-radius:999px;background:linear-gradient(#ffffff8f,#ffffff00);pointer-events:none}
+.boss::after{content:"";position:absolute;top:0;bottom:0;left:-70%;width:45%;background:linear-gradient(105deg,#fff0,#ffffffc7,#fff0);transform:skewX(-20deg);pointer-events:none}
+.boss:hover::after{left:135%;transition:left .75s ease}
+.boss.ink{background:#0B0B0C;color:#fff;box-shadow:0 6px 0 #7A003C}.boss.ink:hover{color:#fff;box-shadow:0 10px 0 #7A003C}
+.ghost{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:0 24px;border-radius:999px;border:2.5px solid #0B0B0C;color:#0B0B0C;background:#fff;font:700 12px/1 'Unbounded',sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:background .25s,color .25s}
+.ghost:hover{background:#0B0B0C;color:#fff}
+.mag{position:relative;display:inline-block;padding:16px;margin:-16px}
+.mag .sp{opacity:0;animation:none}.mag:hover .sp{animation:pop .7s cubic-bezier(.2,.9,.3,1.6) both}
+.sp{position:absolute;background:#FDCA57;clip-path:polygon(50% 0,53.5% 28%,60% 40%,72% 46.5%,100% 50%,72% 53.5%,60% 60%,53.5% 72%,50% 100%,46.5% 72%,40% 60%,28% 53.5%,0 50%,28% 46.5%,40% 40%,46.5% 28%);animation:tw 3.4s ease-in-out infinite}
+.bub{position:absolute;border-radius:50%;border:1.5px solid #FC1D8A80;background:radial-gradient(circle at 32% 28%,#fff 0 7%,#fff0 9%),radial-gradient(circle,#fff0 55%,#FC1D8A33 100%);animation:fl 7s ease-in-out infinite}
+.spin{animation:spin 38s linear infinite}
+.nl{color:#0B0B0C;text-decoration:none;font:600 14px/1 'Poppins',sans-serif;padding:14px 4px;border-bottom:2px solid #0000}.nl:hover,.nl[aria-current]{color:#D6006C;border-color:#FC1D8A}
+.ph{display:inline-flex;align-items:center;padding:8px 14px;border:1.5px dashed #8A6A00;border-radius:10px;background:#FFF6D9;color:#5C4500;font:600 11.5px/1.35 'Poppins',sans-serif;letter-spacing:.05em;text-transform:uppercase}
+.js .rv{opacity:0;transform:translateY(34px)}.js .rv.in{opacity:1;transform:none;transition:opacity .8s ease,transform .9s cubic-bezier(.2,.8,.2,1)}
+@keyframes tw{0%,100%{transform:scale(1)}50%{transform:scale(.55) rotate(18deg);opacity:.65} }
+@keyframes pop{0%{opacity:0;transform:scale(0) rotate(-40deg)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)} }
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)} }
+@keyframes spin{to{transform:rotate(360deg)} }
+@media (max-width:760px){.hide-s{display:none!important} }
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.mag .sp{opacity:0} }
+
+.jump{flex:none;display:inline-flex;align-items:center;gap:10px;min-height:46px;padding:0 18px;border-radius:999px;border:2px solid #0B0B0C;background:#fff;color:#0B0B0C;text-decoration:none;font:600 14px/1 'Poppins',sans-serif;transition:background .2s}
+.jump:hover{background:#FC1D8A;color:#0B0B0C}
+</style>
+</helmet>
+<div id="mb-root" style="background: #FFFFFF; overflow-x: clip">
+<header style="position: sticky; top: 0; z-index: 50; background: #FFFFFFF2; backdrop-filter: blur(10px); border-bottom: 2px solid #0B0B0C">
+<div class="wrap" style="display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 84px; flex-wrap: wrap">
+<a href="Main.dc.html" aria-label="Mop Boss home" style="display: flex; align-items: center"><img src="/_blob/384a9dfb0d62e77ce98aaa2449110d9c" alt="Mop Boss" style="height: 66px; width: auto; mix-blend-mode: multiply; display: block"></a>
+<nav class="hide-s" aria-label="Main" style="display: flex; align-items: center; gap: 30px">
+<a class="nl" href="Services.dc.html" aria-current="page">Services</a><a class="nl" href="Gallery.dc.html">Before &amp; After</a><a class="nl" href="About.dc.html">About Linda</a><a class="nl" href="Main.dc.html">Home</a>
+</nav>
+<div style="display: flex; align-items: center; gap: 18px">
+<a class="hide-s" href="tel:+15133194988" style="display: flex; align-items: center; gap: 8px; color: #0B0B0C; text-decoration: none; font: 700 15px/1 'Poppins', sans-serif">(513) 319-4988</a>
+<a class="boss" href="Quote.dc.html" style="min-height: 50px; padding: 0 22px; font-size: 11.5px; box-shadow: 0 4px 0 #0B0B0C">Get a quote</a>
+</div>
+</div>
+</header>
+<section style="position: relative; padding: 80px 0 54px; overflow: hidden">
+<i class="bub" aria-hidden="true" style="width: 110px; height: 110px; right: 7%; top: 60px"></i><i class="bub" aria-hidden="true" style="width: 46px; height: 46px; right: 16%; top: 210px; animation-delay: -3s"></i><i class="sp" aria-hidden="true" style="width: 44px; height: 44px; right: 21%; top: 84px"></i>
+<div class="wrap" style="position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 24px">
+<div class="eb" style="color: #D6006C">Services</div>
+<h1 class="d" style="font-size: clamp(36px, 6vw, 88px); max-width: 1000px">Five ways to get <span class="i" style="font-size: 1.12em; display: block">the Boss Treatment.</span></h1>
+<p style="margin: 0; max-width: 560px; font-size: 19px; line-height: 1.6; color: #3A3A40">Pick the clean that fits your life. Not sure which one? Start a quote and Linda will point you the right way.</p>
+<span class="ph">Draft menu — categories, inclusions and pricing pending Linda's approval</span>
+</div>
+</section>
+<div style="position: sticky; top: 86px; z-index: 40; background: #FFFFFFF2; backdrop-filter: blur(10px); border-top: 2px solid #0B0B0C; border-bottom: 2px solid #0B0B0C; margin-bottom: -2px">
+<nav class="wrap" aria-label="Jump to a service" style="display: flex; gap: 10px; overflow-x: auto; padding-top: 12px; padding-bottom: 12px; scrollbar-width: none"><a class="jump" href="#s1"><span class="i" style="font-size: 20px; color: inherit">01</span>Residential</a><a class="jump" href="#s2"><span class="i" style="font-size: 20px; color: inherit">02</span>Deep</a><a class="jump" href="#s3"><span class="i" style="font-size: 20px; color: inherit">03</span>Move-in / out</a><a class="jump" href="#s4"><span class="i" style="font-size: 20px; color: inherit">04</span>Recurring</a><a class="jump" href="#s5"><span class="i" style="font-size: 20px; color: inherit">05</span>Specialty</a></nav>
+</div>
+<section id="s1" style="background: #FFFFFF; color: #0B0B0C; padding: 60px 0; scroll-margin-top: 150px; border-top: 2px solid #0B0B0C"><div class="wrap" style="display: flex; flex-wrap: wrap; align-items: center; gap: 36px 64px"><div class="rv" style="position: relative; flex: 1 1 340px; min-width: 0; min-height: 300px; display: flex; align-items: center; justify-content: center; order: 0">
+<div class="i" aria-hidden="true" style="position: absolute; font-size: clamp(190px, 24vw, 330px); line-height: 0.8; color: #FC1D8A; opacity: 1; left: 50%; top: 50%; transform: translate(-58%, -52%)">01</div>
+<div style="position: relative; width: 170px; height: 170px; margin-left: 110px; margin-top: 70px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 6px #FC1D8A, 0 0 0 12px #0B0B0C, 0 30px 44px -20px #0000004d; display: flex; align-items: center; justify-content: center"><svg width="84" height="84" viewBox="0 0 48 48" fill="none" stroke="#0B0B0C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 22L24 8l16 14v16a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z" fill="#FF7DB8"/><path d="M19 40V28h10v12" fill="#fff"/></svg></div>
+</div><div class="rv" style="flex: 1.4 1 460px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; order: 1">
+<div class="eb" style="color: #D6006C">Service 01</div>
+<h2 class="d" style="font-size: clamp(28px, 3.9vw, 56px)">Residential Cleaning</h2>
+<div class="i" style="font-size: clamp(24px, 2.5vw, 34px); line-height: 1.1; color: #D6006C">The regular reset.</div>
+<p style="margin: 0; max-width: 540px; font-size: 17px; line-height: 1.65; color: #3A3A40">Kitchens, baths, floors and all the surfaces in between, brought back to that just-cleaned feeling.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">Busy households</span><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">Staying on top of it</span><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">A weekly exhale</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span class="ph">[What's included — confirm]</span><span class="ph">[Pricing — set by Linda]</span></div>
+<a class="ghost" href="Quote.dc.html" style="margin-top: 6px">Quote this service <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</div></div></section><section id="s2" style="background: #FFF3F8; color: #0B0B0C; padding: 60px 0; scroll-margin-top: 150px; border-top: 2px solid #0B0B0C"><div class="wrap" style="display: flex; flex-wrap: wrap; align-items: center; gap: 36px 64px"><div class="rv" style="position: relative; flex: 1 1 340px; min-width: 0; min-height: 300px; display: flex; align-items: center; justify-content: center; order: 2">
+<div class="i" aria-hidden="true" style="position: absolute; font-size: clamp(190px, 24vw, 330px); line-height: 0.8; color: #FC1D8A; opacity: 1; left: 50%; top: 50%; transform: translate(-58%, -52%)">02</div>
+<div style="position: relative; width: 170px; height: 170px; margin-left: 110px; margin-top: 70px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 6px #FC1D8A, 0 0 0 12px #0B0B0C, 0 30px 44px -20px #0000004d; display: flex; align-items: center; justify-content: center"><svg width="84" height="84" viewBox="0 0 48 48" fill="none" stroke="#0B0B0C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21h24l-3 20H15z" fill="#FF7DB8"/><path d="M9 21h30M16 21c0-7 16-7 16 0"/><circle cx="19" cy="10" r="3" fill="#fff"/><circle cx="30" cy="7" r="2" fill="#fff"/></svg></div>
+</div><div class="rv" style="flex: 1.4 1 460px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; order: 1">
+<div class="eb" style="color: #D6006C">Service 02</div>
+<h2 class="d" style="font-size: clamp(28px, 3.9vw, 56px)">Deep Cleaning</h2>
+<div class="i" style="font-size: clamp(24px, 2.5vw, 34px); line-height: 1.1; color: #D6006C">The full boss treatment.</div>
+<p style="margin: 0; max-width: 540px; font-size: 17px; line-height: 1.65; color: #3A3A40">A top-to-bottom, detail-first clean for when the regular routine isn't enough.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">Seasonal resets</span><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">Before guests arrive</span><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">A fresh start</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span class="ph">[What's included — confirm]</span><span class="ph">[Pricing — set by Linda]</span></div>
+<a class="ghost" href="Quote.dc.html" style="margin-top: 6px">Quote this service <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</div></div></section><section id="s3" style="background: #0B0B0C; color: #FFFFFF; padding: 60px 0; scroll-margin-top: 150px; border-top: 2px solid #0B0B0C"><div class="wrap" style="display: flex; flex-wrap: wrap; align-items: center; gap: 36px 64px"><div class="rv" style="position: relative; flex: 1 1 340px; min-width: 0; min-height: 300px; display: flex; align-items: center; justify-content: center; order: 0">
+<div class="i" aria-hidden="true" style="position: absolute; font-size: clamp(190px, 24vw, 330px); line-height: 0.8; color: #FC1D8A; opacity: 1; left: 50%; top: 50%; transform: translate(-58%, -52%)">03</div>
+<div style="position: relative; width: 170px; height: 170px; margin-left: 110px; margin-top: 70px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 6px #FC1D8A, 0 0 0 12px #0B0B0C, 0 30px 44px -20px #0000004d; display: flex; align-items: center; justify-content: center"><svg width="84" height="84" viewBox="0 0 48 48" fill="none" stroke="#0B0B0C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="15" cy="24" r="8" fill="#FF7DB8"/><circle cx="15" cy="24" r="2.5" fill="#fff"/><path d="M23 24h19M35 24v7M42 24v5"/></svg></div>
+</div><div class="rv" style="flex: 1.4 1 460px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; order: 1">
+<div class="eb" style="color: #FF6FB1">Service 03</div>
+<h2 class="d" style="font-size: clamp(28px, 3.9vw, 56px)">Move-In / Move-Out</h2>
+<div class="i" style="font-size: clamp(24px, 2.5vw, 34px); line-height: 1.1; color: #FF6FB1">Keys in, keys out, spotless.</div>
+<p style="margin: 0; max-width: 540px; font-size: 17px; line-height: 1.65; color: #D9D9DE">An empty-home clean that's ready for a walkthrough, a new chapter, or both.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #FFFFFF; font: 600 14px/1 'Poppins', sans-serif">Renters and owners</span><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #FFFFFF; font: 600 14px/1 'Poppins', sans-serif">Listing prep</span><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #FFFFFF; font: 600 14px/1 'Poppins', sans-serif">New-home day one</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span class="ph">[What's included — confirm]</span><span class="ph">[Pricing — set by Linda]</span></div>
+<a class="ghost" href="Quote.dc.html" style="margin-top: 6px">Quote this service <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</div></div></section><section id="s4" style="background: #FC1D8A; color: #0B0B0C; padding: 60px 0; scroll-margin-top: 150px; border-top: 2px solid #0B0B0C"><div class="wrap" style="display: flex; flex-wrap: wrap; align-items: center; gap: 36px 64px"><div class="rv" style="position: relative; flex: 1 1 340px; min-width: 0; min-height: 300px; display: flex; align-items: center; justify-content: center; order: 2">
+<div class="i" aria-hidden="true" style="position: absolute; font-size: clamp(190px, 24vw, 330px); line-height: 0.8; color: #FFFFFF; opacity: 1; left: 50%; top: 50%; transform: translate(-58%, -52%)">04</div>
+<div style="position: relative; width: 170px; height: 170px; margin-left: 110px; margin-top: 70px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 6px #FC1D8A, 0 0 0 12px #0B0B0C, 0 30px 44px -20px #0000004d; display: flex; align-items: center; justify-content: center"><svg width="84" height="84" viewBox="0 0 48 48" fill="none" stroke="#0B0B0C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="9" fill="#FF7DB8" stroke="none"/><path d="M39 20a15.5 15.5 0 0 0-28-5M10 7v9h9M9 28a15.5 15.5 0 0 0 28 5M38 41v-9h-9"/></svg></div>
+</div><div class="rv" style="flex: 1.4 1 460px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; order: 1">
+<div class="eb" style="color: #0B0B0C">Service 04</div>
+<h2 class="d" style="font-size: clamp(28px, 3.9vw, 56px)">Recurring Housekeeping</h2>
+<div class="i" style="font-size: clamp(24px, 2.5vw, 34px); line-height: 1.1; color: #0B0B0C">A standing date with a clean house.</div>
+<p style="margin: 0; max-width: 540px; font-size: 17px; line-height: 1.65; color: #0B0B0C">Pick a rhythm that suits your life and let the mess stop piling up.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">Weekly</span><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">Every two weeks</span><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">Monthly</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span class="ph">[Frequency options — confirm]</span><span class="ph">[Pricing — set by Linda]</span></div>
+<a class="ghost" href="Quote.dc.html" style="margin-top: 6px">Quote this service <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</div></div></section><section id="s5" style="background: #FFFFFF; color: #0B0B0C; padding: 60px 0; scroll-margin-top: 150px; border-top: 2px solid #0B0B0C"><div class="wrap" style="display: flex; flex-wrap: wrap; align-items: center; gap: 36px 64px"><div class="rv" style="position: relative; flex: 1 1 340px; min-width: 0; min-height: 300px; display: flex; align-items: center; justify-content: center; order: 0">
+<div class="i" aria-hidden="true" style="position: absolute; font-size: clamp(190px, 24vw, 330px); line-height: 0.8; color: #FC1D8A; opacity: 1; left: 50%; top: 50%; transform: translate(-58%, -52%)">05</div>
+<div style="position: relative; width: 170px; height: 170px; margin-left: 110px; margin-top: 70px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 6px #FC1D8A, 0 0 0 12px #0B0B0C, 0 30px 44px -20px #0000004d; display: flex; align-items: center; justify-content: center"><svg width="84" height="84" viewBox="0 0 48 48" fill="none" stroke="#0B0B0C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 9h20l8 11-18 20L6 20z" fill="#FF7DB8"/><path d="M6 20h36M18 9l-4 11 10 20 10-20-4-11"/></svg></div>
+</div><div class="rv" style="flex: 1.4 1 460px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; order: 1">
+<div class="eb" style="color: #D6006C">Service 05</div>
+<h2 class="d" style="font-size: clamp(28px, 3.9vw, 56px)">Specialty Cleaning</h2>
+<div class="i" style="font-size: clamp(24px, 2.5vw, 34px); line-height: 1.1; color: #D6006C">Something particular? Ask the boss.</div>
+<p style="margin: 0; max-width: 540px; font-size: 17px; line-height: 1.65; color: #3A3A40">A one-off job or a tricky space? Tell Linda what you need and she will tell you straight.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">One-off jobs</span><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">Tricky spaces</span><span style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 2px solid #0B0B0C; font: 600 14px/1 'Poppins', sans-serif">Special requests</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><span class="ph">[Specialty list — confirm with Linda]</span></div>
+<a class="ghost" href="Quote.dc.html" style="margin-top: 6px">Quote this service <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</div></div></section><section style="position: relative; background: #FC1D8A; overflow: hidden; padding: 92px 0 96px; border-top: 3px solid #0B0B0C; border-bottom: 3px solid #0B0B0C">
+<i class="bub" aria-hidden="true" style="width: 130px; height: 130px; left: 6%; top: 16%; border-color: #FFFFFFB3; background: radial-gradient(circle at 32% 28%, #fff 0 7%, #fff0 9%), radial-gradient(circle, #fff0 55%, #FFFFFF4d 100%)"></i>
+<i class="bub" aria-hidden="true" style="width: 84px; height: 84px; right: 8%; bottom: 16%; border-color: #FFFFFFB3; background: radial-gradient(circle at 32% 28%, #fff 0 7%, #fff0 9%), radial-gradient(circle, #fff0 55%, #FFFFFF4d 100%); animation-delay: -4s"></i>
+<i class="sp" aria-hidden="true" style="width: 46px; height: 46px; right: 17%; top: 18%"></i>
+<div class="wrap rv" style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 26px">
+<h2 class="d" style="font-size: clamp(32px, 5.4vw, 78px)">Found your <span style="display: block; color: #FFFFFF; -webkit-text-stroke: 5px #0B0B0C; paint-order: stroke fill; text-shadow: 6px 6px 0 #0B0B0C">kind of clean?</span></h2>
+<p style="margin: 0; max-width: 540px; font-size: 18px; line-height: 1.6; font-weight: 500">Six quick taps and your request is with Linda.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px"><span class="mag" onMouseMove="{{ mag }}" onMouseLeave="{{ magOut }}"><a class="boss ink" href="Quote.dc.html" style="min-height: 68px; padding: 0 36px; font-size: 14px">Get the Boss Treatment <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><i class="sp" style="width: 28px; height: 28px; left: 0; top: -8px"></i><i class="sp" style="width: 20px; height: 20px; right: 6px; top: -4px; animation-delay: .08s"></i><i class="sp" style="width: 24px; height: 24px; right: 28%; bottom: -10px; animation-delay: .16s"></i></span>
+<a href="tel:+15133194988" style="display: inline-flex; align-items: center; min-height: 44px; color: #0B0B0C; font: 700 17px/1 'Poppins', sans-serif">or call (513) 319-4988</a></div>
+</div>
+</section><footer style="background: #0B0B0C; color: #FFFFFF; padding: 56px 0 30px">
+<div class="wrap" style="display: flex; flex-direction: column; gap: 34px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 28px 48px">
+<div style="display: flex; align-items: center; gap: 20px"><div style="width: 96px; height: 96px; flex: none; border-radius: 50%; background: #FCFCFC; box-shadow: 0 0 0 4px #FC1D8A; display: flex; align-items: center; justify-content: center"><img src="/_blob/384a9dfb0d62e77ce98aaa2449110d9c" alt="Mop Boss" style="width: 86%; height: auto"></div><div class="i" style="font-size: 24px; color: #FF6FB1">Cleaning has never looked this good.</div></div>
+<nav aria-label="Footer" style="display: flex; flex-wrap: wrap; gap: 8px 26px"><a href="Main.dc.html" style="color: #FFFFFF; min-height: 44px; display: inline-flex; align-items: center">Home</a><a href="Services.dc.html" style="color: #FFFFFF; min-height: 44px; display: inline-flex; align-items: center">Services</a><a href="Gallery.dc.html" style="color: #FFFFFF; min-height: 44px; display: inline-flex; align-items: center">Before &amp; After</a><a href="About.dc.html" style="color: #FFFFFF; min-height: 44px; display: inline-flex; align-items: center">About Linda</a><a href="Quote.dc.html" style="color: #FFFFFF; min-height: 44px; display: inline-flex; align-items: center">Get a quote</a></nav>
+<a href="tel:+15133194988" class="d" style="color: #FFFFFF; font-size: 24px; text-decoration: none">(513) 319-4988</a>
+</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13px; color: #B9B9C0; border-top: 1px solid #FFFFFF33; padding-top: 20px"><span>© 2026 Mop Boss. Linda Tucker · Expert Housekeeper.</span><span>Phase 1 design prototype. Items in [brackets] await confirmation.</span></div>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":4500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { };
+  }
+  calm() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  componentDidMount() {
+    const root = document.documentElement;
+    if (!root || this.calm() || !('IntersectionObserver' in window)) return;
+    root.classList.add('js');
+    this.io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) { en.target.classList.add('in'); this.io.unobserve(en.target); }
+      });
+    }, { threshold: 0.1 });
+    root.querySelectorAll('.rv').forEach((el) => this.io.observe(el));
+  }
+  componentWillUnmount() {
+    if (this.io) this.io.disconnect();
+    if (this.raf) cancelAnimationFrame(this.raf);
+  }
+  renderVals() {
+    const calm = () => this.calm();
+    const st = this.state;
+    const base = {
+      mag: (e) => {
+        if (calm()) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        const b = e.currentTarget.firstElementChild;
+        const x = (e.clientX - r.left - r.width / 2) * 0.22;
+        const y = (e.clientY - r.top - r.height / 2) * 0.34;
+        if (b) b.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
+      },
+      magOut: (e) => {
+        const b = e.currentTarget.firstElementChild;
+        if (b) b.style.transform = '';
+      }
+    };
+    const extra = { };
+    return Object.assign(base, extra);
+  }
+}
+</script>
+</body>
+</html>

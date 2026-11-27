@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mop Boss — Home (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Bodoni+Moda:ital,wght@1,600;1,800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFE3F0;color:#0B0B0C;font-family:'Poppins',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#D6006C}a:hover{color:#0B0B0C}
+:focus-visible{outline:3px solid #0B0B0C;outline-offset:3px;border-radius:10px}
+.d{font-family:'Unbounded','Arial Black',sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:-.025em;line-height:1.02;margin:0}
+.i{font-family:'Bodoni Moda','Didot',Georgia,serif;font-style:italic;font-weight:800;text-transform:none;letter-spacing:-.01em;color:#D6006C}
+.eb{font:700 11px/1 'Unbounded',sans-serif;letter-spacing:.16em;text-transform:uppercase}
+.pad{padding-left:20px;padding-right:20px}
+.boss{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;min-height:60px;padding:0 24px;border-radius:999px;background:#FC1D8A;color:#0B0B0C;border:2.5px solid #0B0B0C;box-shadow:0 6px 0 #0B0B0C;font:900 12.5px/1 'Unbounded',sans-serif;letter-spacing:.05em;text-transform:uppercase;text-decoration:none;overflow:hidden}
+.boss:active{transform:translateY(4px);box-shadow:0 2px 0 #0B0B0C}.boss:hover{color:#0B0B0C}
+.boss::before{content:"";position:absolute;left:14px;right:14px;top:4px;height:40%;border-radius:999px;background:linear-gradient(#ffffff8f,#ffffff00);pointer-events:none}
+.boss.ink{background:#0B0B0C;color:#fff;box-shadow:0 6px 0 #7A003C}.boss.ink:hover{color:#fff}
+.ul{display:inline-flex;align-items:center;min-height:44px;font:700 11.5px/1 'Unbounded',sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
+.sp{position:absolute;background:#FDCA57;clip-path:polygon(50% 0,53.5% 28%,60% 40%,72% 46.5%,100% 50%,72% 53.5%,60% 60%,53.5% 72%,50% 100%,46.5% 72%,40% 60%,28% 53.5%,0 50%,28% 46.5%,40% 40%,46.5% 28%);animation:tw 3.4s ease-in-out infinite}
+.bub{position:absolute;border-radius:50%;border:1.5px solid #FC1D8A80;background:radial-gradient(circle at 32% 28%,#fff 0 7%,#fff0 9%),radial-gradient(circle,#fff0 55%,#FC1D8A33 100%);animation:fl 7s ease-in-out infinite}
+.spin{animation:spin 38s linear infinite}
+.ph{display:inline-flex;align-items:center;padding:8px 12px;border:1.5px dashed #8A6A00;border-radius:10px;background:#FFF6D9;color:#5C4500;font:600 11px/1.35 'Poppins',sans-serif;letter-spacing:.05em;text-transform:uppercase}
+.grime{position:absolute;inset:0;z-index:3;pointer-events:none;background:#C8BEAC30;clip-path:inset(0 0 0 100%)}
+.mop{position:absolute;top:4%;left:0;height:70%;z-index:4;pointer-events:none;transform:translateX(140vw)}
+.mess{position:relative;display:inline-block}.dirty{color:#BDB3A2}
+.clean{position:absolute;left:0;top:0;color:#FC1D8A;-webkit-text-stroke:4px #0B0B0C;paint-order:stroke fill;text-shadow:4px 4px 0 #0B0B0C}
+.go .grime{animation:gw 1.5s .5s cubic-bezier(.6,0,.3,1) both}.go .mop{animation:mv 1.5s .5s cubic-bezier(.6,0,.3,1) both}.go .clean{animation:wipe .5s .8s ease-out both}
+.mq{display:flex;width:max-content;animation:mq 24s linear infinite}
+.rail{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 20px 16px;scrollbar-width:none}.rail::-webkit-scrollbar{display:none}
+.card{flex:none;width:262px;scroll-snap-align:center;display:flex;flex-direction:column;gap:12px;padding:22px 20px;border:2.5px solid #0B0B0C;border-radius:26px;background:#fff;box-shadow:0 6px 0 #0B0B0C;color:#0B0B0C;text-decoration:none}.card:hover{color:#0B0B0C}
+.ba{--p:40%;position:relative;aspect-ratio:1/1.02;border-radius:28px;border:3px solid #0B0B0C;box-shadow:0 8px 0 #0B0B0C;overflow:hidden;background:#fff;touch-action:pan-y}
+.ba-s{position:absolute;inset:0;overflow:hidden}.ba-before{filter:saturate(.3) sepia(.4) brightness(.8)}.ba-after{clip-path:inset(0 calc(100% - var(--p)) 0 0)}
+.ba-h{position:absolute;top:0;bottom:0;left:var(--p);width:5px;margin-left:-2.5px;background:#0B0B0C;pointer-events:none}
+.ba-r{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0}
+.ba:focus-within{outline:4px solid #D6006C;outline-offset:5px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:56px;color:#0B0B0C;text-decoration:none;font:600 11px/1 'Poppins',sans-serif}.tab:hover{color:#D6006C}
+.js .rv{opacity:0;transform:translateY(26px)}.js .rv.in{opacity:1;transform:none;transition:opacity .7s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+@keyframes tw{0%,100%{transform:scale(1)}50%{transform:scale(.55) rotate(18deg);opacity:.65} }
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)} }
+@keyframes spin{to{transform:rotate(360deg)} }
+@keyframes mq{to{transform:translateX(-50%)} }
+@keyframes gw{from{clip-path:inset(0 0 0 0)}to{clip-path:inset(0 0 0 100%)} }
+@keyframes mv{from{transform:translateX(-200px)}to{transform:translateX(460px)} }
+@keyframes wipe{from{clip-path:inset(-15% 104% -20% -5%)}to{clip-path:inset(-15% -8% -20% -5%)} }
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.grime,.mop{display:none} }
+</style>
+</helmet>
+<div id="top" class="m-root" style="max-width: 430px; margin: 0 auto; background: #FFFFFF; overflow-x: clip; position: relative">
+
+<header style="position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 62px; padding: 0 16px; background: #FFFFFFF5; border-bottom: 2px solid #0B0B0C">
+<a href="#top" aria-label="Mop Boss home" style="display: flex; align-items: center"><img src="/_blob/384a9dfb0d62e77ce98aaa2449110d9c" alt="Mop Boss" style="height: 50px; width: auto; mix-blend-mode: multiply; display: block"></a>
+<a href="tel:+15133194988" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 2px solid #0B0B0C; color: #0B0B0C; text-decoration: none; font: 700 13.5px/1 'Poppins', sans-serif"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D6006C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>(513) 319-4988</a>
+</header>
+
+<section id="m-hero" class="go" style="position: relative; overflow: hidden; padding: 24px 0 34px">
+<div class="grime" aria-hidden="true">
+<i style="position: absolute; left: 0; top: 6%; width: 80%; height: 30%; background: radial-gradient(closest-side, #8C7F6A66, #8C7F6A00)"></i>
+<i style="position: absolute; right: 0; top: 42%; width: 70%; height: 36%; background: radial-gradient(closest-side, #8C7F6A55, #8C7F6A00)"></i>
+<i style="position: absolute; inset: 0; background-image: radial-gradient(#7D7260 1.3px, #0000 1.9px), radial-gradient(#7D7260 1px, #0000 1.6px); background-size: 31px 37px, 43px 41px; background-position: 0 0, 17px 21px; opacity: 0.55"></i>
+</div>
+<svg class="mop" viewBox="0 0 220 700" aria-hidden="true"><line x1="172" y1="22" x2="98" y2="556" stroke="#0B0B0C" stroke-width="17" stroke-linecap="round"/><line x1="172" y1="22" x2="163" y2="88" stroke="#FC1D8A" stroke-width="11" stroke-linecap="round"/><path d="M68 548h62l9 36H60z" fill="#FC1D8A" stroke="#0B0B0C" stroke-width="5" stroke-linejoin="round"/><path d="M54 582C22 602 6 650 10 688c20 10 38-8 50 4 14 8 26-8 40 2 14 6 28-10 42-2 18 6 34-2 50-6 4-36-12-86-44-106z" fill="#FF7DB8" stroke="#0B0B0C" stroke-width="5" stroke-linejoin="round"/></svg>
+<div class="pad" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 18px">
+<div class="eb" style="display: flex; align-items: center; gap: 10px"><span style="display: inline-block; width: 24px; height: 3px; background: #FC1D8A"></span>Linda Tucker · Expert Housekeeper</div>
+<h1 class="d" style="font-size: 39px">
+<span style="display: block">We don't</span>
+<span style="display: block">just clean.</span>
+<span style="display: block"><span class="i" style="font-size: 1.16em; line-height: 0.8">We run</span> this</span>
+<span class="mess"><span class="dirty">mess.</span><span class="clean" aria-hidden="true">mess.</span></span>
+</h1>
+<p style="margin: 0; font-size: 16.5px; line-height: 1.55; color: #3A3A40">Professional housekeeping with boss-level standards. Book in minutes. Come home to spotless.</p>
+<a class="boss" href="Mobile-Quote.dc.html" style="margin-top: 4px">Get the Boss Treatment <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+<a class="ul" href="#services" style="align-self: center; color: #0B0B0C">Explore our services</a>
+</div>
+<div style="position: relative; z-index: 2; margin-top: 14px; height: 360px; display: flex; align-items: center; justify-content: center">
+<div aria-hidden="true" style="position: absolute; right: -40px; top: 6px; width: 190px; height: 190px; border-radius: 50%; background: radial-gradient(circle at 30% 26%, #FF9CCB 0, #FC1D8A 46%, #D6006C 100%)"></div>
+<svg class="spin" viewBox="0 0 600 600" aria-hidden="true" style="position: absolute; width: 356px; height: 356px"><defs><path id="ringM" d="M300,300 m-262,0 a262,262 0 1,1 524,0 a262,262 0 1,1 -524,0"/></defs><text fill="#0B0B0C" style="font: 700 22px 'Unbounded', sans-serif"><textPath href="#ringM" textLength="1630">CLEANING HAS NEVER LOOKED THIS GOOD ✦ THIS GOOD ✦</textPath></text></svg>
+<div style="position: relative; width: 262px; height: 262px; border-radius: 50%; background: #FCFCFC; box-shadow: 0 0 0 6px #FC1D8A, 0 0 0 12px #0B0B0C, 0 36px 50px -24px #D6006CB3; display: flex; align-items: center; justify-content: center"><img src="/_blob/384a9dfb0d62e77ce98aaa2449110d9c" alt="Mop Boss logo: pink lettering with a pink mop, bucket and gold sparkles" style="width: 88%; height: auto; display: block"></div>
+<i class="bub" aria-hidden="true" style="width: 54px; height: 54px; left: 8px; top: 20px"></i><i class="bub" aria-hidden="true" style="width: 28px; height: 28px; left: 60px; bottom: 4px; animation-delay: -3s"></i><i class="sp" aria-hidden="true" style="width: 34px; height: 34px; left: 22px; bottom: 44px"></i><i class="sp" aria-hidden="true" style="width: 20px; height: 20px; right: 26px; bottom: 30px; animation-delay: -1.4s"></i>
+</div>
+</section>
+
+<div aria-hidden="true" style="background: #0B0B0C; color: #FFFFFF; padding: 16px 0; overflow: hidden; transform: rotate(-2deg) scale(1.04)">
+<div class="mq d" style="font-size: 17px; letter-spacing: 0.02em"><span style="padding-right: 26px; white-space: nowrap">Spotless homes <span style="color: #FC1D8A">✦</span> Boss-level standards <span style="color: #FC1D8A">✦</span> Booked in minutes <span style="color: #FC1D8A">✦</span></span><span style="padding-right: 26px; white-space: nowrap">Spotless homes <span style="color: #FC1D8A">✦</span> Boss-level standards <span style="color: #FC1D8A">✦</span> Booked in minutes <span style="color: #FC1D8A">✦</span></span></div>
+</div>
+
+<section class="pad" style="padding-top: 60px; padding-bottom: 56px; display: flex; flex-direction: column; gap: 26px">
+<div class="rv" style="display: flex; flex-direction: column; gap: 14px"><div class="eb" style="color: #D6006C">What we do</div><h2 class="d" style="font-size: 28px; line-height: 1.08">A clean home, <span class="i" style="font-size: 1.14em">handled</span> like her own name is on it.</h2>
+<p style="margin: 0; font-size: 16px; line-height: 1.6; color: #3A3A40">Because it is. Mop Boss is Linda Tucker, Expert Housekeeper. One business, one standard.</p></div>
+<div class="rv" style="display: flex; flex-direction: column; border-top: 2px solid #0B0B0C">
+<div style="display: flex; align-items: baseline; gap: 14px; padding: 18px 0; border-bottom: 2px solid #0B0B0C"><span class="i" style="font-size: 30px; width: 34px">1</span><div><div class="d" style="font-size: 19px">Book fast.</div><div style="font-size: 14.5px; line-height: 1.5; color: #3A3A40; margin-top: 6px">Six quick taps. No account, no phone tag.</div></div></div>
+<div style="display: flex; align-items: baseline; gap: 14px; padding: 18px 0; border-bottom: 2px solid #0B0B0C"><span class="i" style="font-size: 30px; width: 34px">2</span><div><div class="d" style="font-size: 19px">Relax harder.</div><div style="font-size: 14.5px; line-height: 1.5; color: #3A3A40; margin-top: 6px">We bring the plan and the elbow grease.</div></div></div>
+<div style="display: flex; align-items: baseline; gap: 14px; padding: 18px 0; border-bottom: 2px solid #0B0B0C"><span class="i" style="font-size: 30px; width: 34px">3</span><div><div class="d" style="font-size: 19px; color: #D6006C">Come home to wow.</div><div style="font-size: 14.5px; line-height: 1.5; color: #3A3A40; margin-top: 6px">Floors, counters, corners. Done properly.</div></div></div>
+</div>
+</section>
+
+<section id="services" style="background: #FFF3F8; padding: 56px 0 50px; scroll-margin-top: 62px">
+<div class="pad rv" style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px"><div class="eb" style="color: #D6006C">The service menu</div><h2 class="d" style="font-size: 32px">Pick your <span class="i" style="font-size: 1.14em">kind</span> of clean.</h2><div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: #3A3A40">Swipe to browse <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D6006C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div></div>
+<div class="rail" tabindex="0" role="group" aria-label="Services, swipe to browse">
+<a class="card" href="Mobile-Quote.dc.html"><span class="i" style="font-size: 44px; line-height: 0.9">01</span><span class="d" style="font-size: 19px; line-height: 1.12">Residential Cleaning</span><span style="font-size: 14.5px; line-height: 1.5; color: #3A3A40">The regular reset for kitchens, baths, floors and everything in between.</span><span class="ul" style="margin-top: auto">Request a quote</span></a>
+<a class="card" href="Mobile-Quote.dc.html"><span class="i" style="font-size: 44px; line-height: 0.9">02</span><span class="d" style="font-size: 19px; line-height: 1.12">Deep Cleaning</span><span style="font-size: 14.5px; line-height: 1.5; color: #3A3A40">Top-to-bottom detail for homes that need the full boss treatment.</span><span class="ul" style="margin-top: auto">Request a quote</span></a>
+<a class="card" href="Mobile-Quote.dc.html" style="background: #FC1D8A"><span class="i" style="font-size: 44px; line-height: 0.9; color: #0B0B0C">03</span><span class="d" style="font-size: 19px; line-height: 1.12">Move-In / Move-Out</span><span style="font-size: 14.5px; line-height: 1.5; color: #0B0B0C">Hand over the keys, or pick them up, with the place spotless.</span><span class="ul" style="margin-top: auto; color: #0B0B0C">Request a quote</span></a>
+<a class="card" href="Mobile-Quote.dc.html"><span class="i" style="font-size: 44px; line-height: 0.9">04</span><span class="d" style="font-size: 19px; line-height: 1.12">Recurring Housekeeping</span><span style="font-size: 14.5px; line-height: 1.5; color: #3A3A40">A standing date with a clean house, on a schedule that suits you.</span><span class="ul" style="margin-top: auto">Request a quote</span></a>
+<a class="card" href="Mobile-Quote.dc.html"><span class="i" style="font-size: 44px; line-height: 0.9">05</span><span class="d" style="font-size: 19px; line-height: 1.12">Specialty Cleaning</span><span style="font-size: 14.5px; line-height: 1.5; color: #3A3A40">Got something particular? Ask the boss.</span><span class="ul" style="margin-top: auto">Request a quote</span></a>
+</div>
+<div class="pad"><span class="ph">Draft list — pending Linda's approval</span></div>
+</section>
+
+<section id="reveal" class="pad" style="padding-top: 56px; padding-bottom: 54px; display: flex; flex-direction: column; gap: 22px; scroll-margin-top: 62px">
+<div class="rv" style="display: flex; flex-direction: column; gap: 14px"><div class="eb" style="color: #D6006C">The transformation reveal</div><h2 class="d" style="font-size: 32px">Go on. <span class="i" style="font-size: 1.14em">Drag</span> the mop.</h2></div>
+<div class="rv ba">
+<sc-for list="{{ sides }}" as="s" hint-placeholder-count="2">
+<div class="{{ s.cls }}" aria-hidden="true">
+<div style="position: absolute; inset: 0; background-color: #FFDDEB; background-image: linear-gradient(#FFFFFF 3px, #0000 3px), linear-gradient(90deg, #FFFFFF 3px, #0000 3px); background-size: 58px 58px"></div>
+<div style="position: absolute; left: 7%; top: 9%; height: 42%; aspect-ratio: 1; border-radius: 50%; border: 6px solid #0B0B0C; background: linear-gradient(135deg, #FFFFFF 0 38%, #E6F3FF 38% 52%, #FFFFFF 52% 60%, #E6F3FF 60%)"></div>
+<div style="position: absolute; right: 7%; top: 14%; width: 32%; height: 8px; border-radius: 8px; background: #0B0B0C"></div>
+<div style="position: absolute; right: 12%; top: 15%; width: 21%; height: 36%; border-radius: 0 0 12px 12px; border: 5px solid #0B0B0C; border-top: 0; background: repeating-linear-gradient(#FC1D8A 0 22px, #FFFFFF 22px 34px)"></div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 26%; background: #FFFFFF; border-top: 6px solid #0B0B0C"></div>
+<div style="position: absolute; left: 14%; bottom: 26%; width: 13%; height: 17%; border-radius: 12px 12px 6px 6px; border: 5px solid #0B0B0C; background: #FC1D8A"></div>
+<div style="position: absolute; left: 42%; bottom: 26%; width: 32%; height: 9%; border-radius: 0 0 80px 80px; border: 5px solid #0B0B0C; background: #FFFFFF"></div>
+<sc-if value="{{ s.dirty }}" hint-placeholder-val="{{ true }}">
+<div style="position: absolute; inset: 0; background: radial-gradient(closest-side at 28% 30%, #5A4A3099, #0000), radial-gradient(closest-side at 72% 34%, #5A4A3066, #0000), radial-gradient(closest-side at 50% 88%, #5A4A3080, #0000), #6B5B4033"></div>
+<div style="position: absolute; inset: 0; background-image: linear-gradient(#4A3C28 3px, #0000 3px), linear-gradient(90deg, #4A3C28 3px, #0000 3px); background-size: 58px 58px; opacity: 0.55; clip-path: inset(0 0 26% 0)"></div>
+<div style="position: absolute; inset: 0; background-image: radial-gradient(#3D3222 2px, #0000 3px), radial-gradient(#3D3222 1.4px, #0000 2.4px); background-size: 51px 43px, 37px 59px; background-position: 0 0, 21px 31px; opacity: 0.5"></div>
+</sc-if>
+<sc-if value="{{ s.clean }}" hint-placeholder-val="{{ false }}">
+<i class="sp" style="width: 34px; height: 34px; left: 44%; top: 8%"></i><i class="sp" style="width: 20px; height: 20px; left: 6%; top: 58%; animation-delay: -1s"></i><i class="bub" style="width: 24px; height: 24px; left: 30%; bottom: 46%"></i>
+</sc-if>
+</div>
+</sc-for>
+<span style="position: absolute; left: 14px; top: 14px; padding: 9px 13px; border-radius: 999px; background: #FC1D8A; border: 2px solid #0B0B0C; font: 900 10px/1 'Unbounded', sans-serif; letter-spacing: 0.1em">AFTER</span>
+<span style="position: absolute; right: 14px; top: 14px; padding: 9px 13px; border-radius: 999px; background: #0B0B0C; color: #FFFFFF; font: 900 10px/1 'Unbounded', sans-serif; letter-spacing: 0.1em">BEFORE</span>
+<div class="ba-h" aria-hidden="true"><span style="position: absolute; top: 62%; left: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: #FC1D8A; border: 3px solid #0B0B0C; box-shadow: 0 4px 0 #0B0B0C; display: flex; align-items: center; justify-content: center"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0B0B0C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6"/></svg></span></div>
+<input class="ba-r" type="range" min="0" max="100" value="{{ pos }}" onChange="{{ slide }}" aria-label="Before and after reveal. Move the slider to wipe the room clean.">
+</div>
+<span class="ph rv" style="align-self: flex-start">Illustrated demo, not a real job — real photos go here</span>
+</section>
+
+<section style="background: #0B0B0C; color: #FFFFFF; padding: 60px 0 54px; position: relative">
+<div class="pad" style="display: flex; flex-direction: column; gap: 30px">
+<div class="rv" style="display: flex; flex-direction: column; gap: 14px"><div class="eb" style="color: #FF6FB1">Why Mop Boss?</div><h2 class="d" style="font-size: 34px">Because <span class="i" style="font-size: 1.14em; color: #FC1D8A">“good enough”</span> isn't.</h2></div>
+<div class="rv" style="display: flex; gap: 16px; border-top: 2px solid #FC1D8A; padding-top: 18px"><span class="i" style="font-size: 44px; line-height: 0.9; color: #FC1D8A; width: 34px">1</span><div><div class="d" style="font-size: 18px; line-height: 1.15">Details are the job.</div><div style="font-size: 15px; line-height: 1.55; color: #D9D9DE; margin-top: 8px">Baseboards, corners, the spot behind the faucet.</div></div></div>
+<div class="rv" style="display: flex; gap: 16px; border-top: 2px solid #FC1D8A; padding-top: 18px"><span class="i" style="font-size: 44px; line-height: 0.9; color: #FC1D8A; width: 34px">2</span><div><div class="d" style="font-size: 18px; line-height: 1.15">Your home, respected.</div><div style="font-size: 15px; line-height: 1.55; color: #D9D9DE; margin-top: 8px">Your space, your things and your time matter.</div></div></div>
+<div class="rv" style="display: flex; gap: 16px; border-top: 2px solid #FC1D8A; padding-top: 18px"><span class="i" style="font-size: 44px; line-height: 0.9; color: #FC1D8A; width: 34px">3</span><div><div class="d" style="font-size: 18px; line-height: 1.15">Straight talk.</div><div style="font-size: 15px; line-height: 1.55; color: #D9D9DE; margin-top: 8px">A clear quote and a real person on the phone.</div></div></div>
+<div class="rv" style="display: flex; gap: 16px; border-top: 2px solid #FC1D8A; padding-top: 18px"><span class="i" style="font-size: 44px; line-height: 0.9; color: #FC1D8A; width: 34px">4</span><div><div class="d" style="font-size: 18px; line-height: 1.15">Finished means finished.</div><div style="font-size: 15px; line-height: 1.55; color: #D9D9DE; margin-top: 8px">Not done until it looks, feels and smells done.</div></div></div>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: -23px; height: 24px; background: radial-gradient(circle at 50% 0, #0B0B0C 0 21px, #0000 22px); background-size: 44px 24px; background-repeat: repeat-x"></div>
+</section>
+
+<section id="linda" class="pad" style="padding-top: 78px; padding-bottom: 56px; display: flex; flex-direction: column; align-items: center; gap: 22px; scroll-margin-top: 62px">
+<div class="rv" style="position: relative; width: 330px; height: 330px; display: flex; align-items: center; justify-content: center">
+<svg class="spin" viewBox="0 0 600 600" aria-hidden="true" style="position: absolute; width: 344px; height: 344px; animation-direction: reverse"><defs><path id="ringL" d="M300,300 m-276,0 a276,276 0 1,1 552,0 a276,276 0 1,1 -552,0"/></defs><text fill="#D6006C" style="font: 700 22px 'Unbounded', sans-serif"><textPath href="#ringL" textLength="1716">MEET THE BOSS ✦ MEET THE BOSS ✦ MEET THE BOSS ✦</textPath></text></svg>
+<img src="/_blob/3079ed7a70bb70bf562d978f55bff70a" alt="Mop Boss badge with an illustration of Linda Tucker, Expert Housekeeper, and the phone number (513) 319-4988" style="position: relative; width: 272px; height: auto; mix-blend-mode: multiply; display: block">
+</div>
+<div class="rv" style="display: flex; flex-direction: column; gap: 16px; align-self: stretch">
+<div class="eb" style="color: #D6006C">Founder spotlight</div>
+<h2 class="d" style="font-size: 32px">Meet Linda. <span class="i" style="font-size: 1.14em; display: block">The boss behind the mop.</span></h2>
+<p style="margin: 0; font-size: 16px; line-height: 1.6; color: #3A3A40">Linda Tucker is the Expert Housekeeper behind Mop Boss. Her name is on the badge and her standards are in every room.</p>
+<div style="padding: 16px 18px; border: 1.5px dashed #8A6A00; border-radius: 16px; background: #FFF6D9; color: #5C4500; font-size: 14px; line-height: 1.55"><strong style="font: 700 10.5px/1.3 'Unbounded', sans-serif; letter-spacing: 0.08em; display: block; margin-bottom: 8px">[LINDA'S NOTE — TO BE WRITTEN WITH LINDA]</strong>A few sentences in Linda's own words.</div>
+</div>
+</section>
+
+<section style="background: #FFF3F8; padding: 56px 0 58px">
+<div class="pad" style="display: flex; flex-direction: column; gap: 26px">
+<div class="rv" style="display: flex; flex-direction: column; gap: 14px"><div class="eb" style="color: #D6006C">How booking works</div><h2 class="d" style="font-size: 32px">Three steps. <span class="i" style="font-size: 1.14em">Zero</span> fuss.</h2></div>
+<div class="rv" style="position: relative; display: flex; flex-direction: column; gap: 16px; padding-left: 34px">
+<div aria-hidden="true" style="position: absolute; left: 10px; top: 14px; bottom: 14px; width: 4px; border-radius: 4px; background: #0B0B0C"></div>
+<div style="position: relative; background: #FFFFFF; border: 2.5px solid #0B0B0C; border-radius: 22px; padding: 18px 18px 20px"><span aria-hidden="true" style="position: absolute; left: -35px; top: 22px; width: 26px; height: 26px; border-radius: 50%; background: #FC1D8A; border: 2.5px solid #0B0B0C"></span><div class="d" style="font-size: 17px; line-height: 1.2"><span class="i" style="font-size: 1.3em">01</span> Tell us about your place</div><div style="font-size: 14.5px; line-height: 1.5; color: #3A3A40; margin-top: 8px">Service, property, size, schedule. Six quick taps.</div></div>
+<div style="position: relative; background: #FFFFFF; border: 2.5px solid #0B0B0C; border-radius: 22px; padding: 18px 18px 20px"><span aria-hidden="true" style="position: absolute; left: -35px; top: 22px; width: 26px; height: 26px; border-radius: 50%; background: #FC1D8A; border: 2.5px solid #0B0B0C"></span><div class="d" style="font-size: 17px; line-height: 1.2"><span class="i" style="font-size: 1.3em">02</span> Get your quote</div><div style="font-size: 14.5px; line-height: 1.5; color: #3A3A40; margin: 8px 0 10px">Linda reviews your request and gets back to you.</div><span class="ph">[Response time — confirm]</span></div>
+<div style="position: relative; background: #FC1D8A; border: 2.5px solid #0B0B0C; border-radius: 22px; padding: 18px 18px 20px"><span aria-hidden="true" style="position: absolute; left: -35px; top: 22px; width: 26px; height: 26px; border-radius: 50%; background: #FDCA57; border: 2.5px solid #0B0B0C"></span><div class="d" style="font-size: 17px; line-height: 1.2"><span class="i" style="font-size: 1.3em; color: #0B0B0C">03</span> Get the Boss Treatment</div><div style="font-size: 14.5px; line-height: 1.5; margin-top: 8px">Pick a day. We show up and run the mess.</div></div>
+</div>
+</div>
+</section>
+
+<section class="pad" style="padding-top: 56px; padding-bottom: 54px; display: flex; flex-direction: column; gap: 20px">
+<div class="rv" style="display: flex; flex-direction: column; gap: 14px"><div class="eb" style="color: #D6006C">Trust, in the open</div><h2 class="d" style="font-size: 28px; line-height: 1.08">We'd rather <span class="i" style="font-size: 1.14em">show</span> you than tell you.</h2></div>
+<div class="rv" style="background: #0B0B0C; color: #FFFFFF; border-radius: 24px; padding: 24px 22px; display: flex; flex-direction: column; gap: 14px"><div class="eb" style="color: #FF6FB1">On the record</div><div style="font-size: 16px; line-height: 1.5"><strong>Owner-led.</strong> Linda Tucker, Expert Housekeeper.</div><div style="font-size: 16px; line-height: 1.5"><strong>One direct line.</strong> <a href="tel:+15133194988" style="color: #FF6FB1">(513) 319-4988</a></div></div>
+<div class="rv" style="border: 2.5px solid #0B0B0C; border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 12px"><div class="i" aria-hidden="true" style="font-size: 64px; line-height: 0.6; height: 26px; color: #FC1D8A">“</div><span class="ph" style="align-self: flex-start">[Real client review goes here]</span><div style="font-size: 13px; color: #55555C">[Client first name · neighborhood · date]</div></div>
+<div class="rv" style="display: flex; flex-wrap: wrap; gap: 8px"><span class="ph">[Insured / bonded — confirm]</span><span class="ph">[Years in business — confirm]</span><span class="ph">[Service area — confirm]</span></div>
+</section>
+
+<section style="position: relative; background: #FC1D8A; overflow: hidden; padding: 64px 0 68px; border-top: 3px solid #0B0B0C">
+<i class="bub" aria-hidden="true" style="width: 90px; height: 90px; right: -18px; top: 20px; border-color: #FFFFFFB3; background: radial-gradient(circle at 32% 28%, #fff 0 7%, #fff0 9%), radial-gradient(circle, #fff0 55%, #FFFFFF4d 100%)"></i><i class="sp" aria-hidden="true" style="width: 34px; height: 34px; left: 20px; bottom: 26px"></i>
+<div class="pad rv" style="position: relative; display: flex; flex-direction: column; gap: 22px">
+<h2 class="d" style="font-size: 34px">Ready for the <span style="display: block; color: #FFFFFF; -webkit-text-stroke: 4px #0B0B0C; paint-order: stroke fill; text-shadow: 4px 4px 0 #0B0B0C">Boss Treatment?</span></h2>
+<p style="margin: 0; font-size: 16.5px; line-height: 1.55; font-weight: 500">Two minutes now. A spotless home soon.</p>
+<a class="boss ink" href="Mobile-Quote.dc.html">Get the Boss Treatment</a>
+<a href="tel:+15133194988" style="align-self: center; display: inline-flex; align-items: center; min-height: 44px; color: #0B0B0C; font: 700 16px/1 'Poppins', sans-serif">or call (513) 319-4988</a>
+</div>
+</section>
+
+<footer style="background: #0B0B0C; color: #FFFFFF; padding: 44px 0 26px; overflow: hidden">
+<div class="pad" style="display: flex; flex-direction: column; gap: 22px">
+<div class="i" style="font-size: 24px; color: #FF6FB1">Cleaning has never looked this good.</div>
+<a href="tel:+15133194988" class="d" style="color: #FFFFFF; font-size: 24px; text-decoration: none">(513) 319-4988</a>
+<div style="font-size: 14.5px; color: #D9D9DE">Linda Tucker · Expert Housekeeper</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><span class="ph">[Email]</span><span class="ph">[Hours]</span><span class="ph">[Service area]</span></div>
+<div class="d" aria-hidden="true" style="font-size: 58px; line-height: 0.9; color: #0000; -webkit-text-stroke: 1.5px #FC1D8A; white-space: nowrap; text-align: center; margin-top: 8px">Mop Boss</div>
+<div style="font-size: 12px; line-height: 1.5; color: #B9B9C0">© 2026 Mop Boss. Phase 1 design prototype. Items in [brackets] await confirmation.</div>
+</div>
+</footer>
+
+<nav aria-label="Quick navigation" style="position: sticky; bottom: 0; z-index: 45; display: flex; align-items: flex-end; gap: 2px; padding: 8px 8px 14px; background: #FFFFFF; border-top: 2px solid #0B0B0C">
+<a class="tab" href="#top"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+<a class="tab" href="#services"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c.6 4.5 2.5 6.4 7 7-4.5.6-6.4 2.5-7 7-.6-4.5-2.5-6.4-7-7 4.5-.6 6.4-2.5 7-7zM19 16v5M16.5 18.5h5"/></svg>Services</a>
+<a href="Mobile-Quote.dc.html" aria-label="Get a quote" style="flex: none; width: 96px; height: 66px; margin: -22px 4px 0; border-radius: 999px; background: #FC1D8A; border: 2.5px solid #0B0B0C; box-shadow: 0 5px 0 #0B0B0C; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #0B0B0C; text-decoration: none; font: 900 10.5px/1 'Unbounded', sans-serif; letter-spacing: 0.06em"><span>GET A</span><span>QUOTE</span></a>
+<a class="tab" href="#reveal"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M12 3v18M8 10l-2 2 2 2M16 10l2 2-2 2"/></svg>Reveal</a>
+<a class="tab" href="#linda"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4-6.5 8-6.5s7 2 8 6.5"/></svg>Linda</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":6900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { pos: 40 };
+  }
+  componentDidMount() {
+    const root = document.documentElement;
+    const calm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (!root || calm || !('IntersectionObserver' in window)) return;
+    root.classList.add('js');
+    this.io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) { en.target.classList.add('in'); this.io.unobserve(en.target); }
+      });
+    }, { threshold: 0.1 });
+    root.querySelectorAll('.rv').forEach((el) => this.io.observe(el));
+  }
+  componentWillUnmount() {
+    if (this.io) this.io.disconnect();
+  }
+  renderVals() {
+    return {
+      pos: this.state.pos,
+      sides: [
+        { cls: 'ba-s ba-before', dirty: true, clean: false },
+        { cls: 'ba-s ba-after', dirty: false, clean: true }
+      ],
+      slide: (e) => {
+        const v = Number(e.target.value);
+        if (e.target.parentElement) e.target.parentElement.style.setProperty('--p', v + '%');
+        this.setState({ pos: v });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

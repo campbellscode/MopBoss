@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mop Boss — Before & After gallery</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Bodoni+Moda:ital,wght@1,600;1,800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#fff;color:#0B0B0C;font-family:'Poppins',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#D6006C}a:hover{color:#0B0B0C}
+:focus-visible{outline:3px solid #0B0B0C;outline-offset:3px;border-radius:10px}
+.d{font-family:'Unbounded','Arial Black',sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:-.025em;line-height:1.02;margin:0}
+.i{font-family:'Bodoni Moda','Didot',Georgia,serif;font-style:italic;font-weight:800;text-transform:none;letter-spacing:-.01em;color:#D6006C}
+.eb{font:700 12px/1 'Unbounded',sans-serif;letter-spacing:.18em;text-transform:uppercase}
+.wrap{max-width:1328px;margin:0 auto;padding:0 clamp(20px,4vw,56px)}
+.boss{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:62px;padding:0 30px;border-radius:999px;background:#FC1D8A;color:#0B0B0C;border:2.5px solid #0B0B0C;box-shadow:0 6px 0 #0B0B0C;font:900 13px/1 'Unbounded',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;overflow:hidden;cursor:pointer;transition:transform .28s cubic-bezier(.2,.9,.3,1.5),box-shadow .28s}
+.boss:hover{color:#0B0B0C;box-shadow:0 10px 0 #0B0B0C}.boss:active{box-shadow:0 2px 0 #0B0B0C}
+.boss::before{content:"";position:absolute;left:14px;right:14px;top:4px;height:40%;border-radius:999px;background:linear-gradient(#ffffff8f,#ffffff00);pointer-events:none}
+.boss::after{content:"";position:absolute;top:0;bottom:0;left:-70%;width:45%;background:linear-gradient(105deg,#fff0,#ffffffc7,#fff0);transform:skewX(-20deg);pointer-events:none}
+.boss:hover::after{left:135%;transition:left .75s ease}
+.boss.ink{background:#0B0B0C;color:#fff;box-shadow:0 6px 0 #7A003C}.boss.ink:hover{color:#fff;box-shadow:0 10px 0 #7A003C}
+.ghost{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:0 24px;border-radius:999px;border:2.5px solid #0B0B0C;color:#0B0B0C;background:#fff;font:700 12px/1 'Unbounded',sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:background .25s,color .25s}
+.ghost:hover{background:#0B0B0C;color:#fff}
+.mag{position:relative;display:inline-block;padding:16px;margin:-16px}
+.mag .sp{opacity:0;animation:none}.mag:hover .sp{animation:pop .7s cubic-bezier(.2,.9,.3,1.6) both}
+.sp{position:absolute;background:#FDCA57;clip-path:polygon(50% 0,53.5% 28%,60% 40%,72% 46.5%,100% 50%,72% 53.5%,60% 60%,53.5% 72%,50% 100%,46.5% 72%,40% 60%,28% 53.5%,0 50%,28% 46.5%,40% 40%,46.5% 28%);animation:tw 3.4s ease-in-out infinite}
+.bub{position:absolute;border-radius:50%;border:1.5px solid #FC1D8A80;background:radial-gradient(circle at 32% 28%,#fff 0 7%,#fff0 9%),radial-gradient(circle,#fff0 55%,#FC1D8A33 100%);animation:fl 7s ease-in-out infinite}
+.spin{animation:spin 38s linear infinite}
+.nl{color:#0B0B0C;text-decoration:none;font:600 14px/1 'Poppins',sans-serif;padding:14px 4px;border-bottom:2px solid #0000}.nl:hover,.nl[aria-current]{color:#D6006C;border-color:#FC1D8A}
+.ph{display:inline-flex;align-items:center;padding:8px 14px;border:1.5px dashed #8A6A00;border-radius:10px;background:#FFF6D9;color:#5C4500;font:600 11.5px/1.35 'Poppins',sans-serif;letter-spacing:.05em;text-transform:uppercase}
+.js .rv{opacity:0;transform:translateY(34px)}.js .rv.in{opacity:1;transform:none;transition:opacity .8s ease,transform .9s cubic-bezier(.2,.8,.2,1)}
+@keyframes tw{0%,100%{transform:scale(1)}50%{transform:scale(.55) rotate(18deg);opacity:.65} }
+@keyframes pop{0%{opacity:0;transform:scale(0) rotate(-40deg)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)} }
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)} }
+@keyframes spin{to{transform:rotate(360deg)} }
+@media (max-width:760px){.hide-s{display:none!important} }
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.mag .sp{opacity:0} }
+
+.ba{--p:38%;position:relative;aspect-ratio:2.1/1;min-height:300px;border-radius:36px;border:3px solid #0B0B0C;box-shadow:0 10px 0 #0B0B0C;overflow:hidden;background:#fff}
+.ba-s{position:absolute;inset:0;overflow:hidden}.ba-before{filter:saturate(.3) sepia(.4) brightness(.8)}.ba-after{clip-path:inset(0 calc(100% - var(--p)) 0 0)}
+.ba-h{position:absolute;top:0;bottom:0;left:var(--p);width:5px;margin-left:-2.5px;background:#0B0B0C;pointer-events:none}
+.ba-r{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:ew-resize}
+.ba:focus-within{outline:4px solid #D6006C;outline-offset:5px}
+.chip{min-height:48px;padding:0 20px;border-radius:999px;border:2.5px solid #0B0B0C;background:#fff;color:#0B0B0C;font:600 14.5px/1 'Poppins',sans-serif;cursor:pointer;transition:background .2s}
+.chip:hover{background:#FFD3E6}.chip.on{background:#0B0B0C;color:#fff}
+.tile{animation:tin .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes tin{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none} }
+</style>
+</helmet>
+<div id="mb-root" style="background: #FFFFFF; overflow-x: clip">
+<header style="position: sticky; top: 0; z-index: 50; background: #FFFFFFF2; backdrop-filter: blur(10px); border-bottom: 2px solid #0B0B0C">
+<div class="wrap" style="display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 84px; flex-wrap: wrap">
+<a href="Main.dc.html" aria-label="Mop Boss home" style="display: flex; align-items: center"><img src="/_blob/384a9dfb0d62e77ce98aaa2449110d9c" alt="Mop Boss" style="height: 66px; width: auto; mix-blend-mode: multiply; display: block"></a>
+<nav class="hide-s" aria-label="Main" style="display: flex; align-items: center; gap: 30px">
+<a class="nl" href="Services.dc.html">Services</a><a class="nl" href="Gallery.dc.html" aria-current="page">Before &amp; After</a><a class="nl" href="About.dc.html">About Linda</a><a class="nl" href="Main.dc.html">Home</a>
+</nav>
+<div style="display: flex; align-items: center; gap: 18px">
+<a class="hide-s" href="tel:+15133194988" style="display: flex; align-items: center; gap: 8px; color: #0B0B0C; text-decoration: none; font: 700 15px/1 'Poppins', sans-serif">(513) 319-4988</a>
+<a class="boss" href="Quote.dc.html" style="min-height: 50px; padding: 0 22px; font-size: 11.5px; box-shadow: 0 4px 0 #0B0B0C">Get a quote</a>
+</div>
+</div>
+</header>
+<section style="padding: 72px 0 40px">
+<div class="wrap" style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 22px"><div class="eb" style="color: #D6006C">Before &amp; After</div><h1 class="d" style="font-size: clamp(36px, 6vw, 88px)">Before. After. <span class="i" style="font-size: 1.14em">Ahhh.</span></h1></div>
+<p style="margin: 0; max-width: 400px; font-size: 18px; line-height: 1.6; color: #3A3A40">The most satisfying part of the job, on repeat. Drag the mop yourself or let us sweep it for you.</p>
+</div>
+</section>
+<section style="padding: 0 0 80px">
+<div class="wrap" style="display: flex; flex-direction: column; gap: 26px">
+<div id="ba" class="ba"><sc-for list="{{ sides }}" as="s" hint-placeholder-count="2">
+<div class="{{ s.cls }}" aria-hidden="true">
+<div style="position: absolute; inset: 0; background-color: #FFDDEB; background-image: linear-gradient(#FFFFFF 3px, #0000 3px), linear-gradient(90deg, #FFFFFF 3px, #0000 3px); background-size: 72px 72px"></div>
+<div style="position: absolute; left: 9%; top: 9%; height: 56%; aspect-ratio: 1; border-radius: 50%; border: 7px solid #0B0B0C; background: linear-gradient(135deg, #FFFFFF 0 38%, #E6F3FF 38% 52%, #FFFFFF 52% 60%, #E6F3FF 60%)"></div>
+<div style="position: absolute; right: 9%; top: 16%; width: 24%; height: 9px; border-radius: 9px; background: #0B0B0C"></div>
+<div style="position: absolute; right: 13%; top: 17%; width: 15%; height: 42%; border-radius: 0 0 14px 14px; border: 5px solid #0B0B0C; border-top: 0; background: repeating-linear-gradient(#FC1D8A 0 26px, #FFFFFF 26px 40px)"></div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 27%; background: #FFFFFF; border-top: 6px solid #0B0B0C"></div>
+<div style="position: absolute; left: 46%; bottom: 27%; width: 7%; height: 22%; border-radius: 14px 14px 6px 6px; border: 5px solid #0B0B0C; background: #FC1D8A"></div>
+<div style="position: absolute; left: 48.4%; bottom: 49%; width: 2.2%; height: 6%; background: #0B0B0C; border-radius: 4px 4px 0 0"></div>
+<div style="position: absolute; left: 57%; bottom: 27%; width: 13%; height: 10%; border-radius: 0 0 80px 80px; border: 5px solid #0B0B0C; background: #FFFFFF"></div>
+<sc-if value="{{ s.dirty }}" hint-placeholder-val="{{ true }}">
+<div style="position: absolute; inset: 0; background: radial-gradient(closest-side at 22% 36%, #5A4A3099, #0000), radial-gradient(closest-side at 70% 30%, #5A4A3066, #0000), radial-gradient(closest-side at 50% 88%, #5A4A3080, #0000), #6B5B4033"></div>
+<div style="position: absolute; inset: 0; background-image: linear-gradient(#4A3C28 3px, #0000 3px), linear-gradient(90deg, #4A3C28 3px, #0000 3px); background-size: 72px 72px; opacity: 0.55; clip-path: inset(0 0 27% 0)"></div>
+<div style="position: absolute; inset: 0; background-image: radial-gradient(#3D3222 2px, #0000 3px), radial-gradient(#3D3222 1.4px, #0000 2.4px); background-size: 61px 47px, 43px 67px; background-position: 0 0, 21px 31px; opacity: 0.5"></div>
+</sc-if>
+<sc-if value="{{ s.clean }}" hint-placeholder-val="{{ false }}">
+<i class="sp" style="width: 7%; aspect-ratio: 1; left: 31%; top: 10%"></i><i class="sp" style="width: 4%; aspect-ratio: 1; left: 5%; top: 52%; animation-delay: -1s"></i><i class="sp" style="width: 5%; aspect-ratio: 1; left: 71%; bottom: 31%; animation-delay: -2s"></i><i class="bub" style="width: 5%; aspect-ratio: 1; left: 40%; top: 22%"></i>
+</sc-if>
+</div>
+</sc-for>
+<span style="position: absolute; left: 20px; top: 20px; padding: 10px 16px; border-radius: 999px; background: #FC1D8A; border: 2px solid #0B0B0C; font: 900 11px/1 'Unbounded', sans-serif; letter-spacing: 0.1em">AFTER</span>
+<span style="position: absolute; right: 20px; top: 20px; padding: 10px 16px; border-radius: 999px; background: #0B0B0C; color: #FFFFFF; font: 900 11px/1 'Unbounded', sans-serif; letter-spacing: 0.1em">BEFORE</span>
+<div class="ba-h" aria-hidden="true"><span style="position: absolute; top: 50%; left: 50%; width: 76px; height: 76px; margin: -38px 0 0 -38px; border-radius: 50%; background: #FC1D8A; border: 3px solid #0B0B0C; box-shadow: 0 5px 0 #0B0B0C; display: flex; align-items: center; justify-content: center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0B0B0C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6"/></svg></span></div>
+<input class="ba-r" type="range" min="0" max="100" value="{{ pos }}" onChange="{{ slide }}" aria-label="Before and after reveal. Move the slider to wipe the room clean.">
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px"><button type="button" class="boss" onClick="{{ auto }}" style="min-height: 54px; font-size: 12px">Sweep it for me</button><span class="d" aria-live="polite" style="font-size: 18px">{{ cleanLabel }}</span></div>
+<span class="ph">Illustrated demo, not a real job — Linda's real photos replace this</span>
+</div>
+</div>
+</section>
+
+<section style="background: #FFF3F8; padding: 84px 0 92px; border-top: 2px solid #0B0B0C">
+<div class="wrap" style="display: flex; flex-direction: column; gap: 34px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 18px"><div class="eb" style="color: #D6006C">The transformation wall</div><h2 class="d" style="font-size: clamp(30px, 4.4vw, 62px)">Room by <span class="i" style="font-size: 1.12em">room.</span></h2></div>
+<div role="group" aria-label="Filter by room" style="display: flex; flex-wrap: wrap; gap: 10px">
+<sc-for list="{{ chips }}" as="c" hint-placeholder-count="5"><button type="button" class="{{ c.cls }}" aria-pressed="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 26px">
+<sc-for list="{{ tiles }}" as="t" hint-placeholder-count="6">
+<figure class="tile" style="margin: 0; display: flex; flex-direction: column; gap: 14px">
+<div style="position: relative; aspect-ratio: 4/3; border-radius: 26px; border: 2.5px solid #0B0B0C; box-shadow: 0 7px 0 #0B0B0C; overflow: hidden; background: repeating-linear-gradient(135deg, #D8D0C2 0 14px, #E6DFD3 14px 28px)">
+<div style="position: absolute; inset: 0; clip-path: polygon(0 0, 58% 0, 42% 100%, 0 100%); background: repeating-linear-gradient(135deg, #FFD3E6 0 14px, #FFFFFF 14px 28px)"></div>
+<div aria-hidden="true" style="position: absolute; top: -10%; bottom: -10%; left: 50%; width: 5px; margin-left: -2.5px; background: #0B0B0C; transform: rotate(9.5deg)"></div>
+<i class="sp" aria-hidden="true" style="width: 34px; height: 34px; left: 12%; top: 14%"></i>
+<span style="position: absolute; left: 14px; bottom: 14px; font: 900 10px/1 'Unbounded', sans-serif; letter-spacing: 0.1em; padding: 8px 12px; border-radius: 999px; background: #FC1D8A; border: 2px solid #0B0B0C">AFTER</span>
+<span style="position: absolute; right: 14px; bottom: 14px; font: 900 10px/1 'Unbounded', sans-serif; letter-spacing: 0.1em; padding: 8px 12px; border-radius: 999px; background: #0B0B0C; color: #FFFFFF">BEFORE</span>
+<span class="ph" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); white-space: nowrap; background: #FFFFFF">[Real photo pair {{ t.n }}]</span>
+</div>
+<figcaption style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span class="d" style="font-size: 16px">{{ t.cat }}</span><span style="font-size: 13.5px; color: #55555C">[Service · date]</span></figcaption>
+</figure>
+</sc-for>
+</div>
+<span class="ph" style="align-self: flex-start">Photo placeholders only — no real customer results are shown in this prototype</span>
+</div>
+</section>
+<section style="position: relative; background: #FC1D8A; overflow: hidden; padding: 92px 0 96px; border-top: 3px solid #0B0B0C; border-bottom: 3px solid #0B0B0C">
+<i class="bub" aria-hidden="true" style="width: 130px; height: 130px; left: 6%; top: 16%; border-color: #FFFFFFB3; background: radial-gradient(circle at 32% 28%, #fff 0 7%, #fff0 9%), radial-gradient(circle, #fff0 55%, #FFFFFF4d 100%)"></i>
+<i class="bub" aria-hidden="true" style="width: 84px; height: 84px; right: 8%; bottom: 16%; border-color: #FFFFFFB3; background: radial-gradient(circle at 32% 28%, #fff 0 7%, #fff0 9%), radial-gradient(circle, #fff0 55%, #FFFFFF4d 100%); animation-delay: -4s"></i>
+<i class="sp" aria-hidden="true" style="width: 46px; height: 46px; right: 17%; top: 18%"></i>
+<div class="wrap rv" style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 26px">
+<h2 class="d" style="font-size: clamp(32px, 5.4vw, 78px)">Want your own <span style="display: block; color: #FFFFFF; -webkit-text-stroke: 5px #0B0B0C; paint-order: stroke fill; text-shadow: 6px 6px 0 #0B0B0C">before &amp; after?</span></h2>
+<p style="margin: 0; max-width: 540px; font-size: 18px; line-height: 1.6; font-weight: 500">Tell us about your place and we will make it the next transformation.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px"><span class="mag" onMouseMove="{{ mag }}" onMouseLeave="{{ magOut }}"><a class="boss ink" href="Quote.dc.html" style="min-height: 68px; padding: 0 36px; font-size: 14px">Get the Boss Treatment <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><i class="sp" style="width: 28px; height: 28px; left: 0; top: -8px"></i><i class="sp" style="width: 20px; height: 20px; right: 6px; top: -4px; animation-delay: .08s"></i><i class="sp" style="width: 24px; height: 24px; right: 28%; bottom: -10px; animation-delay: .16s"></i></span>
+<a href="tel:+15133194988" style="display: inline-flex; align-items: center; min-height: 44px; color: #0B0B0C; font: 700 17px/1 'Poppins', sans-serif">or call (513) 319-4988</a></div>
+</div>
+</section><footer style="background: #0B0B0C; color: #FFFFFF; padding: 56px 0 30px">
+<div class="wrap" style="display: flex; flex-direction: column; gap: 34px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 28px 48px">
+<div style="display: flex; align-items: center; gap: 20px"><div style="width: 96px; height: 96px; flex: none; border-radius: 50%; background: #FCFCFC; box-shadow: 0 0 0 4px #FC1D8A; display: flex; align-items: center; justify-content: center"><img src="/_blob/384a9dfb0d62e77ce98aaa2449110d9c" alt="Mop Boss" style="width: 86%; height: auto"></div><div class="i" style="font-size: 24px; color: #FF6FB1">Cleaning has never looked this good.</div></div>
+<nav aria-label="Footer" style="display: flex; flex-wrap: wrap; gap: 8px 26px"><a href="Main.dc.html" style="color: #FFFFFF; min-height: 44px; display: inline-flex; align-items: center">Home</a><a href="Services.dc.html" style="color: #FFFFFF; min-height: 44px; display: inline-flex; align-items: center">Services</a><a href="Gallery.dc.html" style="color: #FFFFFF; min-height: 44px; display: inline-flex; align-items: center">Before &amp; After</a><a href="About.dc.html" style="color: #FFFFFF; min-height: 44px; display: inline-flex; align-items: center">About Linda</a><a href="Quote.dc.html" style="color: #FFFFFF; min-height: 44px; display: inline-flex; align-items: center">Get a quote</a></nav>
+<a href="tel:+15133194988" class="d" style="color: #FFFFFF; font-size: 24px; text-decoration: none">(513) 319-4988</a>
+</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13px; color: #B9B9C0; border-top: 1px solid #FFFFFF33; padding-top: 20px"><span>© 2026 Mop Boss. Linda Tucker · Expert Housekeeper.</span><span>Phase 1 design prototype. Items in [brackets] await confirmation.</span></div>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3050}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { pos: 38, cat: 'All' };
+  }
+  calm() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  componentDidMount() {
+    const root = document.documentElement;
+    if (!root || this.calm() || !('IntersectionObserver' in window)) return;
+    root.classList.add('js');
+    this.io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) { en.target.classList.add('in'); this.io.unobserve(en.target); }
+      });
+    }, { threshold: 0.1 });
+    root.querySelectorAll('.rv').forEach((el) => this.io.observe(el));
+  }
+  componentWillUnmount() {
+    if (this.io) this.io.disconnect();
+    if (this.raf) cancelAnimationFrame(this.raf);
+  }
+  renderVals() {
+    const calm = () => this.calm();
+    const st = this.state;
+    const base = {
+      mag: (e) => {
+        if (calm()) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        const b = e.currentTarget.firstElementChild;
+        const x = (e.clientX - r.left - r.width / 2) * 0.22;
+        const y = (e.clientY - r.top - r.height / 2) * 0.34;
+        if (b) b.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
+      },
+      magOut: (e) => {
+        const b = e.currentTarget.firstElementChild;
+        if (b) b.style.transform = '';
+      }
+    };
+    const apply = (v) => {
+      const el = document.getElementById('ba');
+      if (el) el.style.setProperty('--p', v + '%');
+      this.setState({ pos: Math.round(v) });
+    };
+    const cats = ['All', 'Kitchens', 'Bathrooms', 'Living spaces', 'Move-outs'];
+    const all = [['Kitchens', '01'], ['Bathrooms', '02'], ['Living spaces', '03'], ['Kitchens', '04'], ['Move-outs', '05'], ['Bathrooms', '06']];
+    const extra = {
+      pos: st.pos,
+      cleanLabel: st.pos + '% spotless',
+      sides: [
+        { cls: 'ba-s ba-before', dirty: true, clean: false },
+        { cls: 'ba-s ba-after', dirty: false, clean: true }
+      ],
+      slide: (e) => apply(Number(e.target.value)),
+      auto: () => {
+        if (this.raf) cancelAnimationFrame(this.raf);
+        if (calm()) { apply(100); return; }
+        const t0 = performance.now();
+        const tick = (t) => {
+          const k = Math.min(1, (t - t0) / 1800);
+          const ease = 1 - Math.pow(1 - k, 3);
+          apply(2 + 98 * ease);
+          if (k < 1) this.raf = requestAnimationFrame(tick);
+        };
+        this.raf = requestAnimationFrame(tick);
+      },
+      chips: cats.map((c) => ({ label: c, on: st.cat === c, cls: st.cat === c ? 'chip on' : 'chip', pick: () => this.setState({ cat: c }) })),
+      tiles: all.filter((x) => st.cat === 'All' || x[0] === st.cat).map((x) => ({ cat: x[0], n: x[1] }))
+    };
+    return Object.assign(base, extra);
+  }
+}
+</script>
+</body>
+</html>
