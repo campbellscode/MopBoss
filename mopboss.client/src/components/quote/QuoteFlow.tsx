@@ -396,11 +396,14 @@ function ContactStep({
     const invalid =
       name === 'name' ? attempted && !answers.name.trim() : errorKey ? show(errorKey) : false;
     const errorId = `${reqId}-${name}-error`;
+    const inputId = `${reqId}-${name}`;
+    // The error sits outside the <label> so it never becomes part of the field's name.
     return (
-      <label className={styles.field}>
-        {label}
+      <div className={styles.field}>
+        <label htmlFor={inputId}>{label}</label>
         <input
           {...props}
+          id={inputId}
           name={name}
           value={answers[name]}
           onChange={(e) => dispatch({ type: 'type', field: name, value: e.target.value })}
@@ -414,7 +417,7 @@ function ContactStep({
             {quoteCopy.errors[errorKey]}
           </span>
         ) : null}
-      </label>
+      </div>
     );
   };
 
