@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="mopboss.client/mopboss.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="MopBoss.Server/MopBoss.Server.csproj" />
+</Solution>
