@@ -41,8 +41,8 @@ public class ApiSecurityTests : IDisposable
     {
         var huge = new string('x', QuotesController.MaxBodyBytes + 1024);
         var response = await Post(JsonContent.Create(Payloads.Valid(notes: huge)));
-        // Under Kestrel this is 413 (RequestSizeLimit / MaxRequestBodySize). The in-process
-        // TestServer does not apply body-size limits, so here the length validation answers 400.
+        // The in-process TestServer does not apply body-size limits, so here the length
+        // validation answers 400. KestrelLimitsTests proves 413 through a real server.
         Assert.Contains(response.StatusCode, new[] { HttpStatusCode.RequestEntityTooLarge, HttpStatusCode.BadRequest });
         Assert.Equal(0, _factory.Query(db => db.QuoteRequests.Count()));
     }

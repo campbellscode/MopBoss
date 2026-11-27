@@ -54,6 +54,11 @@ namespace MopBoss.Server
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
             builder.Services.AddProblemDetails();
+            // Kestrel reports client errors (e.g. a body over the size limit) as
+            // BadHttpRequestException. Keep their status (413, 400...) instead of turning
+            // them into 500s; everything else stays a 500 without details.
+            builder.Services.Configure<ExceptionHandlerOptions>(o => o.StatusCodeSelector = ex =>
+                ex is BadHttpRequestException bad ? bad.StatusCode : StatusCodes.Status500InternalServerError);
             builder.Services.AddSingleton(TimeProvider.System);
 
             // Quote requests live in SQL Server. Migrations are applied manually, never at startup.
