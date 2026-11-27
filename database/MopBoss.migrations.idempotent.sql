@@ -402,3 +402,40 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127172444_NotificationResolutionStatuses'
+)
+BEGIN
+    ALTER TABLE [NotificationOutbox] DROP CONSTRAINT [CK_NotificationOutbox_Status];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127172444_NotificationResolutionStatuses'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [NotificationOutbox] ADD CONSTRAINT [CK_NotificationOutbox_Status] CHECK ([Status] IN (''Pending'',''Sent'',''Failed'',''HandledManually'',''Suppressed''))');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127172444_NotificationResolutionStatuses'
+)
+BEGIN
+    EXEC(N'UPDATE [NotificationOutbox] SET [Status] = ''HandledManually'' WHERE [Status] = ''Failed'' AND [LastError] = ''HandledManually'';');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127172444_NotificationResolutionStatuses'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261127172444_NotificationResolutionStatuses', N'10.0.11');
+END;
+
+COMMIT;
+GO
+

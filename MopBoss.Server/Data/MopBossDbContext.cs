@@ -54,7 +54,8 @@ public class MopBossDbContext(DbContextOptions<MopBossDbContext> options) : DbCo
         {
             e.ToTable("NotificationOutbox", t =>
             {
-                t.HasCheckConstraint("CK_NotificationOutbox_Status", "[Status] IN ('Pending','Sent','Failed')");
+                t.HasCheckConstraint("CK_NotificationOutbox_Status",
+                    "[Status] IN ('Pending','Sent','Failed','HandledManually','Suppressed')");
                 t.HasCheckConstraint("CK_NotificationOutbox_Attempts", "[Attempts] >= 0");
             });
             e.HasKey(n => n.Id);

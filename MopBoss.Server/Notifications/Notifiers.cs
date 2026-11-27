@@ -11,29 +11,42 @@ using MopBoss.Server.Data;
 
 namespace MopBoss.Server.Notifications;
 
+/// <summary>What a notifier actually did. Only Delivered means an SMTP server accepted an email.</summary>
+public enum DeliveryResult
+{
+    Delivered,
+
+    /// <summary>Deliberately not emailed (logging notifier outside Production).</summary>
+    Suppressed,
+}
+
 /// <summary>Tells Linda that a new quote request arrived.</summary>
 public interface IQuoteNotifier
 {
     /// <param name="messageId">Stable per notification, so a resend carries the same Message-ID.</param>
-    Task NotifyAsync(QuoteRequest request, string messageId, CancellationToken cancellationToken);
+    Task<DeliveryResult> NotifyAsync(QuoteRequest request, string messageId, CancellationToken cancellationToken);
 }
 
-/// <summary>Used when SMTP is not configured outside Production: records that nothing was emailed.</summary>
+/// <summary>
+/// Used when SMTP is not configured outside Production. It sends nothing and says so:
+/// the outbox row becomes Suppressed, never Sent, so a log-only run cannot be mistaken
+/// for real delivery. Production refuses to start without SMTP.
+/// </summary>
 public class LoggingQuoteNotifier(ILogger<LoggingQuoteNotifier> logger) : IQuoteNotifier
 {
-    public Task NotifyAsync(QuoteRequest request, string messageId, CancellationToken cancellationToken)
+    public Task<DeliveryResult> NotifyAsync(QuoteRequest request, string messageId, CancellationToken cancellationToken)
     {
         logger.LogWarning(
-            "SMTP is not configured; quote {Reference} was not emailed (logging notifier).",
+            "NOT EMAILED: SMTP is not configured, so quote {Reference} was only logged (status Suppressed).",
             request.Reference);
-        return Task.CompletedTask;
+        return Task.FromResult(DeliveryResult.Suppressed);
     }
 }
 
 /// <summary>Emails Linda a plain-text summary of each request over SMTP (MailKit).</summary>
 public class SmtpQuoteNotifier(IOptions<SmtpOptions> options, IHostEnvironment environment) : IQuoteNotifier
 {
-    public async Task NotifyAsync(QuoteRequest request, string messageId, CancellationToken cancellationToken)
+    public async Task<DeliveryResult> NotifyAsync(QuoteRequest request, string messageId, CancellationToken cancellationToken)
     {
         var smtp = options.Value;
         var message = BuildMessage(request, smtp, environment.IsProduction(), messageId);
@@ -50,6 +63,7 @@ public class SmtpQuoteNotifier(IOptions<SmtpOptions> options, IHostEnvironment e
             await client.AuthenticateAsync(smtp.Username, smtp.Password ?? "", cancellationToken);
         await client.SendAsync(new SendRequest(message), cancellationToken);
         await client.DisconnectAsync(true, cancellationToken);
+        return DeliveryResult.Delivered;
     }
 
     /// <summary>
@@ -68,15 +82,21 @@ public class SmtpQuoteNotifier(IOptions<SmtpOptions> options, IHostEnvironment e
             : smtp.To!;
         message.To.Add(MailboxAddress.Parse(recipient));
 
-        if (!string.IsNullOrWhiteSpace(r.Email) && MailboxAddress.TryParse(r.Email, out var replyTo))
+        // Reply-To the customer only in Production. In test mail, replying would reach a
+        // real or test customer from a test inbox, so it is omitted and the body says why.
+        if (isProduction && !string.IsNullOrWhiteSpace(r.Email) && MailboxAddress.TryParse(r.Email, out var replyTo))
             message.ReplyTo.Add(replyTo);
 
         var name = OneLine(r.Name);
         var prefix = isProduction ? "" : "[TEST] ";
         message.Subject = $"{prefix}New quote request {r.Reference}: {OneLine(r.Service)} for {name}";
 
-        var body = new StringBuilder()
-            .AppendLine($"New quote request from the Mop Boss website ({r.CreatedAtUtc:yyyy-MM-dd HH:mm} UTC).")
+        var body = new StringBuilder();
+        if (!isProduction)
+            body.AppendLine("TEST MESSAGE (not Production). Do not contact this customer from this email;")
+                .AppendLine("Reply-To has been removed on purpose.")
+                .AppendLine();
+        body.AppendLine($"New quote request from the Mop Boss website ({r.CreatedAtUtc:yyyy-MM-dd HH:mm} UTC).")
             .AppendLine($"Reference: {r.Reference}")
             .AppendLine()
             .AppendLine($"Service:   {r.Service}")

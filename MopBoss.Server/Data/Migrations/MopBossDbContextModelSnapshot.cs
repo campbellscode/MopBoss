@@ -109,7 +109,7 @@ namespace MopBoss.Server.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_NotificationOutbox_Attempts", "[Attempts] >= 0");
 
-                            t.HasCheckConstraint("CK_NotificationOutbox_Status", "[Status] IN ('Pending','Sent','Failed')");
+                            t.HasCheckConstraint("CK_NotificationOutbox_Status", "[Status] IN ('Pending','Sent','Failed','HandledManually','Suppressed')");
                         });
                 });
 

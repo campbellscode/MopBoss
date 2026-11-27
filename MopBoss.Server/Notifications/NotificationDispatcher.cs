@@ -105,9 +105,10 @@ public class NotificationDispatcher(
 
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(stopping);
         deadline.CancelAfter(DeliveryBudget(settings));
+        DeliveryResult result;
         try
         {
-            await notifier.NotifyAsync(quote, row.MessageId, deadline.Token);
+            result = await notifier.NotifyAsync(quote, row.MessageId, deadline.Token);
         }
         catch (OperationCanceledException) when (stopping.IsCancellationRequested)
         {
@@ -128,6 +129,12 @@ public class NotificationDispatcher(
         }
 
         row.Attempts++;
+        if (result == DeliveryResult.Suppressed)
+        {
+            // Logged only, never sent: recorded as such so nobody mistakes it for delivery.
+            await FinishAsync(row, NotificationStatus.Suppressed, "NotSent:LoggingNotifier");
+            return;
+        }
         row.SentAtUtc = clock.GetUtcNow();
         if (await FinishAsync(row, NotificationStatus.Sent, null))
             logger.LogInformation("Notification for quote {Reference} sent (attempt {Attempts}).", quote.Reference, row.Attempts);
@@ -186,11 +193,20 @@ public class NotificationDispatcher(
     }
 }
 
-/// <summary>Background loop that runs the dispatcher until the host stops.</summary>
+/// <summary>
+/// Background loop that runs the dispatcher until the host stops. It also repeats an
+/// Error log (at start-up and every <see cref="NotificationOptions.FailureReminderMinutes"/>)
+/// listing the references of unresolved Failed notifications, so a request Linda never
+/// received cannot be forgotten after one log line scrolls away.
+/// </summary>
 public class NotificationWorker(
-    IServiceScopeFactory scopes, IOptions<NotificationOptions> options, ILogger<NotificationWorker> logger)
+    IServiceScopeFactory scopes, IOptions<NotificationOptions> options, TimeProvider clock,
+    ILogger<NotificationWorker> logger)
     : BackgroundService
 {
+    private const int ReminderListLimit = 20;
+    private DateTimeOffset _nextReminder = DateTimeOffset.MinValue;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var settings = options.Value;
@@ -204,8 +220,12 @@ public class NotificationWorker(
             {
                 int attempted;
                 using (var scope = scopes.CreateScope())
+                {
                     attempted = await scope.ServiceProvider.GetRequiredService<NotificationDispatcher>()
                         .DispatchDueAsync(stoppingToken);
+                    await RemindAboutFailuresAsync(scope.ServiceProvider.GetRequiredService<MopBossDbContext>(),
+                        settings, stoppingToken);
+                }
                 errorDelay = idle;
                 if (attempted == 0) await Task.Delay(idle, stoppingToken);
             }
@@ -223,5 +243,28 @@ public class NotificationWorker(
             }
         }
         logger.LogInformation("Notification worker stopped.");
+    }
+
+    /// <summary>Logs unresolved failures when the reminder is due. Returns true if it logged.</summary>
+    internal async Task<bool> RemindAboutFailuresAsync(MopBossDbContext db, NotificationOptions settings, CancellationToken ct)
+    {
+        var now = clock.GetUtcNow();
+        if (now < _nextReminder) return false;
+        _nextReminder = now.AddMinutes(settings.FailureReminderMinutes);
+
+        var failed = await db.NotificationOutbox.AsNoTracking()
+            .Where(n => n.Status == NotificationStatus.Failed)
+            .OrderBy(n => n.CreatedAtUtc)
+            .Select(n => n.QuoteRequest!.Reference)
+            .Take(ReminderListLimit + 1)
+            .ToListAsync(ct);
+        if (failed.Count == 0) return false;
+
+        logger.LogError(
+            "ACTION NEEDED: {Count} quote request(s) were never emailed to Linda: {References}. " +
+            "Follow PRODUCTION_READINESS.md, Operational recovery (database/operations-recovery.sql).",
+            failed.Count > ReminderListLimit ? $"{ReminderListLimit}+" : failed.Count.ToString(),
+            string.Join(", ", failed.Take(ReminderListLimit)));
+        return true;
     }
 }

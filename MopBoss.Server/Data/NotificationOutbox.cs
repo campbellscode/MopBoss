@@ -8,8 +8,21 @@ public enum NotificationStatus
     /// <summary>The SMTP server accepted the message.</summary>
     Sent,
 
-    /// <summary>Gave up: permanent error or attempts exhausted. Needs an operator (see PRODUCTION_READINESS.md).</summary>
+    /// <summary>
+    /// Gave up: permanent error or attempts exhausted. Linda has NOT been emailed. Stays
+    /// visible (health Degraded, hourly error log) until requeued or marked HandledManually,
+    /// however old it is.
+    /// </summary>
     Failed,
+
+    /// <summary>An operator passed the request to Linda another way after it Failed (never emailed).</summary>
+    HandledManually,
+
+    /// <summary>
+    /// Deliberately not emailed: outside Production with no SMTP configured, the logging
+    /// notifier records the request instead. Never possible in Production.
+    /// </summary>
+    Suppressed,
 }
 
 /// <summary>

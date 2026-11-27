@@ -17,7 +17,7 @@ public class FakeNotifier : IQuoteNotifier
 
     public int Calls { get; private set; }
 
-    public async Task NotifyAsync(QuoteRequest request, string messageId, CancellationToken cancellationToken)
+    public async Task<DeliveryResult> NotifyAsync(QuoteRequest request, string messageId, CancellationToken cancellationToken)
     {
         Exception? failure = null;
         lock (_gate)
@@ -28,6 +28,7 @@ public class FakeNotifier : IQuoteNotifier
         if (During is not null) await During(cancellationToken);
         if (failure is not null) throw failure;
         lock (_gate) Sent.Add((request.Reference, messageId));
+        return DeliveryResult.Delivered;
     }
 }
 

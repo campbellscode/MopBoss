@@ -40,6 +40,9 @@ public class NotificationEmailTests
 
         Assert.Equal("test-inbox@example.test", message.To.Mailboxes.Single().Address);
         Assert.StartsWith("[TEST] ", message.Subject);
+        // Replying from a test inbox must not reach the customer.
+        Assert.Empty(message.ReplyTo);
+        Assert.StartsWith("TEST MESSAGE (not Production)", message.TextBody);
     }
 
     [Fact]

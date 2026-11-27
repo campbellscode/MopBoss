@@ -55,9 +55,24 @@ public class HealthCheckTests
     }
 
     [Fact]
-    public async Task A_failure_marked_as_handled_manually_no_longer_degrades_health()
+    public async Task A_failure_handed_over_manually_no_longer_degrades_health()
     {
-        Add(NotificationStatus.Failed, _clock.Now, NotificationBacklogHealthCheck.HandledManually);
+        Add(NotificationStatus.HandledManually, _clock.Now, "Timeout");
+        Assert.Equal(HealthStatus.Healthy, await CheckAsync());
+    }
+
+    [Fact]
+    public async Task An_unresolved_failure_stays_visible_however_old_it_is()
+    {
+        Add(NotificationStatus.Failed, _clock.Now, "Timeout");
+        _clock.Advance(TimeSpan.FromDays(90));
+        Assert.Equal(HealthStatus.Degraded, await CheckAsync());
+    }
+
+    [Fact]
+    public async Task Log_only_notifications_outside_production_are_not_a_delivery_problem()
+    {
+        Add(NotificationStatus.Suppressed, _clock.Now, "NotSent:LoggingNotifier");
         Assert.Equal(HealthStatus.Healthy, await CheckAsync());
     }
 }

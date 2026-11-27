@@ -63,6 +63,9 @@ public class NotificationOptions
 
     /// <summary>How long a worker owns a claimed notification. Must exceed the SMTP timeout.</summary>
     public int LeaseSeconds { get; set; } = 120;
+
+    /// <summary>How often to repeat the error log listing unresolved failed notifications.</summary>
+    public int FailureReminderMinutes { get; set; } = 60;
 }
 
 /// <summary>

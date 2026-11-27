@@ -126,6 +126,10 @@ public class NotificationLeaseTests
 
     private sealed class ScriptedNotifier(Func<QuoteRequest, CancellationToken, Task> send) : IQuoteNotifier
     {
-        public Task NotifyAsync(QuoteRequest request, string messageId, CancellationToken ct) => send(request, ct);
+        public async Task<DeliveryResult> NotifyAsync(QuoteRequest request, string messageId, CancellationToken ct)
+        {
+            await send(request, ct);
+            return DeliveryResult.Delivered;
+        }
     }
 }

@@ -140,6 +140,77 @@ VALUES (NEWID(), '2026-11-01T10:00:00+00:00', 'Deep Cleaning', 'House', 2, 1, 'N
         throw new FileNotFoundException(relative);
     }
 
+    private static async Task<Guid> SeedNotificationAsync(string cs, NotificationStatus status)
+    {
+        await using var db = SqlServerFixture.Context(cs);
+        await Service(db).SubmitAsync(Payloads.Dto(name: $"Customer {Guid.NewGuid():N}"), Guid.NewGuid(), CancellationToken.None);
+        var row = await db.NotificationOutbox.OrderByDescending(n => n.CreatedAtUtc).FirstAsync();
+        row.Status = status;
+        row.ConcurrencyStamp = Guid.NewGuid();
+        await db.SaveChangesAsync();
+        return row.Id;
+    }
+
+    private static async Task<List<string>> RunBatchesAsync(string cs, string sqlText)
+    {
+        var errors = new List<string>();
+        await using var conn = new SqlConnection(cs);
+        await conn.OpenAsync();
+        foreach (var batch in System.Text.RegularExpressions.Regex.Split(sqlText, @"^\s*GO\s*$",
+                     System.Text.RegularExpressions.RegexOptions.Multiline).Where(b => !string.IsNullOrWhiteSpace(b)))
+        {
+            try { await using var cmd = new SqlCommand(batch, conn); await cmd.ExecuteNonQueryAsync(); }
+            catch (SqlException ex) { errors.Add(ex.Message); } // like SSMS: keep going
+        }
+        return errors;
+    }
+
+    private static string Section(string script, string name)
+    {
+        var start = script.IndexOf($"-- BEGIN {name}", StringComparison.Ordinal);
+        var end = script.IndexOf($"-- END {name}", start, StringComparison.Ordinal);
+        return script[start..end];
+    }
+
+    [Fact]
+    public async Task Running_the_whole_recovery_script_by_accident_changes_nothing()
+    {
+        var cs = await sql.NewMigratedDatabaseAsync();
+        await SeedNotificationAsync(cs, NotificationStatus.Failed);
+        await SeedNotificationAsync(cs, NotificationStatus.HandledManually);
+        var script = await File.ReadAllTextAsync(FindRepoFile("database/operations-recovery.sql"));
+
+        var errors = await RunBatchesAsync(cs, script);
+
+        Assert.Equal(5, errors.Count); // every section stopped at its unset variable
+        Assert.All(errors, e => Assert.Contains("Nothing changed", e));
+        await using var db = SqlServerFixture.Context(cs);
+        var statuses = await db.NotificationOutbox.Select(n => n.Status).OrderBy(s => s).ToListAsync();
+        Assert.Equal([NotificationStatus.Failed, NotificationStatus.HandledManually], statuses);
+    }
+
+    [Fact]
+    public async Task Bulk_retry_skips_handled_requests_and_refuses_an_unexpected_count()
+    {
+        var cs = await sql.NewMigratedDatabaseAsync();
+        var failedA = await SeedNotificationAsync(cs, NotificationStatus.Failed);
+        var failedB = await SeedNotificationAsync(cs, NotificationStatus.Failed);
+        var handled = await SeedNotificationAsync(cs, NotificationStatus.HandledManually);
+        var section = Section(await File.ReadAllTextAsync(FindRepoFile("database/operations-recovery.sql")), "retry-all-failed");
+
+        var wrongCount = await RunBatchesAsync(cs, section.Replace("DECLARE @ExpectedRows int = NULL;", "DECLARE @ExpectedRows int = 3;"));
+        Assert.Contains(wrongCount, e => e.Contains("row count differs"));
+        await using (var db = SqlServerFixture.Context(cs))
+            Assert.Equal(2, await db.NotificationOutbox.CountAsync(n => n.Status == NotificationStatus.Failed)); // rolled back
+
+        var ok = await RunBatchesAsync(cs, section.Replace("DECLARE @ExpectedRows int = NULL;", "DECLARE @ExpectedRows int = 2;"));
+        Assert.Empty(ok);
+        await using var check = SqlServerFixture.Context(cs);
+        Assert.Equal(NotificationStatus.Pending, (await check.NotificationOutbox.SingleAsync(n => n.Id == failedA)).Status);
+        Assert.Equal(NotificationStatus.Pending, (await check.NotificationOutbox.SingleAsync(n => n.Id == failedB)).Status);
+        Assert.Equal(NotificationStatus.HandledManually, (await check.NotificationOutbox.SingleAsync(n => n.Id == handled)).Status);
+    }
+
     [Fact]
     public async Task Stores_the_quote_and_its_notification_in_one_transaction()
     {

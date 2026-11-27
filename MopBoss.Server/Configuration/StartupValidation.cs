@@ -93,6 +93,11 @@ public static class StartupValidation
         if (smtp.TimeoutSeconds is < 5 or > 300)
             errors.Add("Smtp:TimeoutSeconds must be between 5 and 300.");
 
+        // A test inbox must never be Linda's real address (or the sender).
+        if (!string.IsNullOrWhiteSpace(smtp.DevelopmentRecipientOverride)
+            && (SameAddress(smtp.DevelopmentRecipientOverride, smtp.To) || SameAddress(smtp.DevelopmentRecipientOverride, smtp.From)))
+            errors.Add("Smtp:DevelopmentRecipientOverride must be a separate test inbox, not Smtp:To or Smtp:From.");
+
         if (isProduction)
         {
             if (smtp.Security == SmtpSecurity.None)
@@ -118,6 +123,7 @@ public static class StartupValidation
     {
         var errors = new List<string>();
         if (n.MaxAttempts is < 1 or > 50) errors.Add("Notifications:MaxAttempts must be between 1 and 50.");
+        if (n.FailureReminderMinutes is < 5 or > 1440) errors.Add("Notifications:FailureReminderMinutes must be between 5 and 1440.");
         if (n.BatchSize is < 1 or > 100) errors.Add("Notifications:BatchSize must be between 1 and 100.");
         if (n.PollIntervalSeconds < 1) errors.Add("Notifications:PollIntervalSeconds must be at least 1.");
         if (n.BaseDelaySeconds < 1 || n.MaxDelaySeconds < n.BaseDelaySeconds)
@@ -155,6 +161,10 @@ public static class StartupValidation
         }
         return errors;
     }
+
+    private static bool SameAddress(string? a, string? b) =>
+        MimeKit.MailboxAddress.TryParse(a ?? "", out var x) && MimeKit.MailboxAddress.TryParse(b ?? "", out var y)
+        && string.Equals(x.Address, y.Address, StringComparison.OrdinalIgnoreCase);
 
     private static bool TryAddress(string? value) =>
         !string.IsNullOrWhiteSpace(value) && MimeKit.MailboxAddress.TryParse(value, out _);
