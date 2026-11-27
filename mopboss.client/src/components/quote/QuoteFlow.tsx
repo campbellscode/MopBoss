@@ -24,7 +24,8 @@ import {
   type QuoteState,
   type StepIndex,
 } from '@/lib/quote/machine';
-import { isMockSubmission, submitQuoteRequest, toPayload } from '@/lib/quote/submit';
+import { newIdempotencyKey } from '@/lib/quote/idempotency';
+import { submitQuoteRequest, toPayload } from '@/lib/quote/submit';
 import styles from './QuoteFlow.module.css';
 
 const cx = (...parts: Array<string | false | undefined>) => parts.filter(Boolean).join(' ');
@@ -49,19 +50,34 @@ export function QuoteFlow() {
     headingRef.current?.focus();
   }, [step, done]);
 
-  // Hand the request to the submit adapter when the reducer enters "submitting".
+  const mounted = useRef(false);
   useEffect(() => {
-    if (state.status !== 'submitting') return;
-    let cancelled = false;
-    submitQuoteRequest(toPayload(answers)).then((result) => {
-      if (!cancelled) dispatch({ type: result.ok ? 'submitted' : 'failed' });
-    });
+    mounted.current = true;
     return () => {
-      cancelled = true;
+      mounted.current = false;
     };
-    // Only the transition into "submitting" should trigger a send.
+  }, []);
+
+  // Hand the request to the adapter when the reducer enters "submitting". The ref makes
+  // sure one key is sent once even if React runs the effect twice (Strict Mode); the
+  // key itself makes any retry of the same answers safe on the server.
+  const sendingKey = useRef<string | null>(null);
+  useEffect(() => {
+    const key = state.idempotencyKey;
+    if (state.status !== 'submitting' || !key || sendingKey.current === key) return;
+    sendingKey.current = key;
+    submitQuoteRequest(toPayload(answers), key).then((outcome) => {
+      sendingKey.current = null;
+      if (!mounted.current) return;
+      dispatch(
+        outcome.ok
+          ? { type: 'submitted', result: outcome.result }
+          : { type: 'failed', failure: outcome.failure },
+      );
+    });
+    // Only entering "submitting" (with its key) should trigger a send.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.status]);
+  }, [state.status, state.idempotencyKey]);
 
   const pct = progressPercent(state);
   const valid = stepValid(answers, step);
@@ -70,7 +86,9 @@ export function QuoteFlow() {
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    dispatch({ type: 'next' });
+    // A key is offered on every Continue; the reducer only uses it when a send starts
+    // and it does not already hold one (a retry keeps its original key).
+    dispatch({ type: 'next', newKey: step === STEP_COUNT - 1 ? newIdempotencyKey() : undefined });
   };
 
   return (
@@ -159,11 +177,14 @@ export function QuoteFlow() {
                 {state.attempted && !valid ? hint : ''}
               </span>
             </div>
-            {state.status === 'error' ? (
-              <p className={cx(styles.wrap, styles.submitError)} role="alert">
-                {quoteCopy.submitError} <a href={telHref}>{business.phone.display}</a>
-              </p>
-            ) : null}
+            <p className={cx(styles.wrap, styles.submitError)} role="alert">
+              {state.failure ? (
+                <>
+                  {quoteCopy.failures[state.failure]} <a href={telHref}>{business.phone.display}</a>
+                  .
+                </>
+              ) : null}
+            </p>
           </div>
         )}
       </form>
@@ -547,6 +568,8 @@ function Done({
   onRestart: () => void;
 }) {
   const name = firstName(state.answers, quoteCopy.done.fallbackName);
+  const live = state.result?.mode === 'live' ? state.result : null;
+  const copy = live ? quoteCopy.done : quoteCopy.demo;
   return (
     <div className={cx(styles.stepIn, styles.done)}>
       <Sparkle motion="pop" delay=".25s" style={{ width: 48, height: 48, right: '12%', top: -6 }} />
@@ -556,18 +579,24 @@ function Done({
         delay=".55s"
         style={{ width: 34, height: 34, right: '22%', top: 120 }}
       />
-      <Eyebrow className={styles.stepEyebrow}>{quoteCopy.done.eyebrow}</Eyebrow>
+      <Eyebrow className={styles.stepEyebrow}>{copy.eyebrow}</Eyebrow>
       <h1 ref={headingRef} tabIndex={-1} className={cx('display', styles.doneTitle)}>
-        {renderHeadline(quoteCopy.done.heading(name))}
+        {renderHeadline(copy.heading(name))}
       </h1>
-      <p className={styles.doneBody}>
-        {quoteCopy.done.body} <a href={telHref}>{business.phone.display}</a>.
-      </p>
-      {isMockSubmission ? (
-        <div className={styles.stamp} role="note">
-          {quoteCopy.done.demoStamp}
-        </div>
+      {live ? (
+        <p className={styles.reference}>
+          <span>{quoteCopy.done.referenceLabel}</span>
+          <strong>{live.reference}</strong>
+        </p>
       ) : null}
+      <p className={styles.doneBody}>
+        {copy.body} <a href={telHref}>{business.phone.display}</a>.
+      </p>
+      {live ? null : (
+        <div className={styles.stamp} role="note">
+          {quoteCopy.demo.stamp}
+        </div>
+      )}
       <div className={styles.doneActions}>
         <Link href="/" className={bossClassName({ lift: true })}>
           {quoteCopy.done.home}

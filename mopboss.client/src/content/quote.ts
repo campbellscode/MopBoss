@@ -117,6 +117,11 @@ export const quoteCopy = {
     questions: 'Questions? Call Linda at',
   },
   nav: { back: 'Back', next: 'Continue', send: 'Send my request', sending: 'Sending…' },
+  /**
+   * Confirmation wording. NEW COPY (needs Linda's approval): the live body and the
+   * whole demo variant replace the prototype's "Linda has your details", which was
+   * untrue in demo mode and promised more than "stored" on a real send.
+   */
   done: {
     eyebrow: 'Request received',
     heading: (firstName: string): Headline => [
@@ -124,13 +129,34 @@ export const quoteCopy = {
       { accent: `handled, ${firstName}.`, block: true },
     ],
     fallbackName: 'boss',
-    body: 'Linda has your details and will follow up with your quote. Need her sooner? Call',
-    demoStamp: 'Demo only · nothing was sent',
+    referenceLabel: 'Your reference',
+    body: 'Your request is saved. Keep your reference handy: Linda will follow up with your quote. Need her sooner? Call',
     home: 'Back to home',
     restart: 'Start over',
   },
+  demo: {
+    eyebrow: 'Demo only',
+    heading: (firstName: string): Headline => [
+      'Nothing was sent, ',
+      { accent: `${firstName}.`, block: true },
+    ],
+    body: 'This site is in demo mode, so your request was not sent and Linda has not received it. To get a quote, call Linda at',
+    stamp: 'Demo only · nothing was sent',
+  },
   /** Shown only when JavaScript is off: the form cannot work without it. */
   noScript: 'This quote form needs JavaScript. You can also call Linda at',
-  submitError:
-    'Something went wrong sending your request. Please try again, or call Linda instead.',
+  /**
+   * Send failures. NEW COPY (needs Linda's approval). Each ends with the phone number,
+   * and the visitor's answers are always kept.
+   */
+  failures: {
+    invalid:
+      "Some of these details weren't accepted. Please check them and send again, or call Linda at",
+    'rate-limited':
+      'Too many requests came from this connection in the last few minutes. Please try again in about 10 minutes, or call Linda at',
+    uncertain:
+      "We couldn't confirm your request reached us. Your details are still here: sending again is safe and won't create a duplicate. Or call Linda at",
+    conflict: 'Something got out of step. Please send again, or call Linda at',
+    unavailable: "Online quote requests aren't available right now. Please call Linda at",
+  },
 } as const;

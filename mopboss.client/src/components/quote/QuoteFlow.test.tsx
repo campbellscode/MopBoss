@@ -2,7 +2,11 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { SubmitOutcome } from '@/lib/quote/submit';
+
 const submitSpy = vi.fn();
+/** Outcomes the mocked adapter returns, in order; demo once the queue is empty. */
+const outcomes: SubmitOutcome[] = [];
 
 vi.mock('@/lib/quote/submit', async (importActual) => {
   const actual = await importActual<typeof import('@/lib/quote/submit')>();
@@ -10,7 +14,7 @@ vi.mock('@/lib/quote/submit', async (importActual) => {
     ...actual,
     submitQuoteRequest: (...args: Parameters<typeof actual.submitQuoteRequest>) => {
       submitSpy(...args);
-      return Promise.resolve({ ok: true });
+      return Promise.resolve(outcomes.shift() ?? { ok: true, result: { mode: 'demo' } });
     },
   };
 });
@@ -19,7 +23,14 @@ import { QuoteFlow } from './QuoteFlow';
 
 beforeEach(() => {
   submitSpy.mockClear();
+  outcomes.length = 0;
 });
+
+const alertText = () =>
+  screen
+    .getAllByRole('alert')
+    .map((a) => a.textContent ?? '')
+    .join(' ');
 
 const heading = () => screen.getByRole('heading', { level: 1 });
 const progress = () => screen.getByRole('progressbar', { name: 'Quote request progress' });
@@ -61,7 +72,7 @@ describe('QuoteFlow', () => {
     expect(continueButton()).toHaveAccessibleDescription('Pick a service to continue');
     await user.click(continueButton());
     expect(heading()).toHaveTextContent('What are we tackling?');
-    expect(screen.getByRole('alert')).toHaveTextContent('Pick a service to continue');
+    expect(alertText()).toContain('Pick a service to continue');
   });
 
   it('moves focus to the step heading on each step change', async () => {
@@ -134,10 +145,13 @@ describe('QuoteFlow', () => {
     expect(screen.getAllByText('2 bed · 1 bath · 2,000 to 3,000')).toHaveLength(2);
     expect(screen.getByText('Dana Smith · 513 555 0100')).toBeInTheDocument();
 
+    outcomes.push({ ok: true, result: { mode: 'live', reference: 'MB-7K3Q9X' } });
     await user.click(screen.getByRole('button', { name: /send my request/i }));
     await waitFor(() => expect(heading()).toHaveTextContent('Consider it handled, Dana.'));
     expect(heading()).toHaveFocus();
-    expect(screen.getByText('Demo only · nothing was sent')).toBeInTheDocument();
+    expect(screen.getByText('MB-7K3Q9X')).toBeInTheDocument();
+    expect(screen.queryByText(/demo/i)).toBeNull();
+    expect(screen.queryByText(/has your details/i)).toBeNull(); // no claim Linda has it yet
     expect(submitSpy).toHaveBeenCalledTimes(1);
     expect(submitSpy.mock.calls[0][0]).toMatchObject({
       service: 'Deep Cleaning',
@@ -146,5 +160,84 @@ describe('QuoteFlow', () => {
       contact: { name: 'Dana Smith', phone: '513 555 0100' },
       website: '',
     });
+  });
+
+  async function toReview(user: ReturnType<typeof userEvent.setup>) {
+    await completeChoices(user);
+    await user.type(screen.getByLabelText('Your name'), 'Dana Smith');
+    await user.type(screen.getByLabelText('Phone'), '513 555 0100');
+    await user.click(continueButton());
+    expect(heading()).toHaveTextContent('Give it a once-over.');
+  }
+
+  it('says plainly in demo mode that nothing was sent and Linda has not received it', async () => {
+    const user = userEvent.setup();
+    render(<QuoteFlow />);
+    await toReview(user);
+
+    await user.click(continueButton());
+
+    await waitFor(() => expect(heading()).toHaveTextContent('Nothing was sent, Dana.'));
+    expect(screen.getByText(/Linda has not received it/)).toBeInTheDocument();
+    expect(screen.getByText('Demo only · nothing was sent')).toBeInTheDocument();
+    expect(screen.queryByText(/Consider it handled/)).toBeNull();
+    expect(screen.queryByText(/Your reference/)).toBeNull();
+  });
+
+  it('keeps the answers after an uncertain send and retries with the same key', async () => {
+    const user = userEvent.setup();
+    render(<QuoteFlow />);
+    await toReview(user);
+    outcomes.push({ ok: false, failure: 'uncertain' });
+
+    await user.click(continueButton());
+
+    await waitFor(() => expect(alertText()).toContain("couldn't confirm your request reached us"));
+    expect(alertText()).toContain('(513) 319-4988');
+    expect(heading()).toHaveTextContent('Give it a once-over.');
+    expect(screen.getByText('Dana Smith · 513 555 0100')).toBeInTheDocument();
+
+    outcomes.push({ ok: true, result: { mode: 'live', reference: 'MB-7K3Q9X' } });
+    await user.click(continueButton());
+
+    await waitFor(() => expect(heading()).toHaveTextContent('Consider it handled, Dana.'));
+    expect(submitSpy).toHaveBeenCalledTimes(2);
+    const [firstKey, secondKey] = submitSpy.mock.calls.map((call) => call[1]);
+    expect(firstKey).toMatch(/^[0-9a-f-]{36}$/);
+    expect(secondKey).toBe(firstKey);
+  });
+
+  it.each([
+    ['rate-limited', 'Too many requests came from this connection'],
+    ['unavailable', "Online quote requests aren't available right now"],
+    ['invalid', "Some of these details weren't accepted"],
+  ] as const)(
+    'explains a %s failure truthfully and offers the phone number',
+    async (failure, text) => {
+      const user = userEvent.setup();
+      render(<QuoteFlow />);
+      await toReview(user);
+      outcomes.push({ ok: false, failure });
+
+      await user.click(continueButton());
+
+      await waitFor(() => expect(alertText()).toContain(text));
+      expect(alertText()).toContain('(513) 319-4988');
+      expect(heading()).toHaveTextContent('Give it a once-over.');
+    },
+  );
+
+  it('sends once even when Send is pressed repeatedly', async () => {
+    const user = userEvent.setup();
+    render(<QuoteFlow />);
+    await toReview(user);
+
+    const send = continueButton(); // relabels to "Sending…" after the first press
+    await user.click(send);
+    await user.click(send);
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => expect(heading()).toHaveTextContent('Nothing was sent, Dana.'));
+    expect(submitSpy).toHaveBeenCalledTimes(1);
   });
 });
