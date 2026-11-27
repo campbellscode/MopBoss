@@ -3,13 +3,11 @@ import type { QuoteAnswers } from './machine';
 /**
  * The single seam between the quote form and wherever requests end up.
  *
- * HOW REQUESTS REACH LINDA IS NOT DECIDED YET. Until it is, `submitQuoteRequest`
- * uses the mock below, which sends nothing anywhere and resolves locally. The
- * confirmation screen shows "Demo only · nothing was sent" while
- * `isMockSubmission` is true. Do not deploy publicly with the mock active.
- *
- * To go live, add a real implementation (for example a POST to the MopBoss.Server
- * API), point `activeAdapter` at it and set `isMockSubmission` to false.
+ * Requests go to MopBoss.Server (POST /api/quote), which stores them in SQL Server
+ * and emails Linda. The API is used only when NEXT_PUBLIC_QUOTE_API_URL is set at
+ * build time (for example https://api.yourdomain). Without it, the mock below is
+ * used: it sends nothing, and the confirmation screen says
+ * "Demo only · nothing was sent". Never deploy publicly without the API URL.
  */
 
 export type QuoteRequestPayload = {
@@ -64,10 +62,31 @@ export const mockAdapter: QuoteAdapter = async () => {
   return { ok: true, reference: 'demo' };
 };
 
-/** True while the mock is wired in; drives the "nothing was sent" notice. */
-export const isMockSubmission = true;
+/** Posts the payload to MopBoss.Server. 202 means stored (and, if SMTP is set, emailed). */
+export const httpAdapter =
+  (baseUrl: string): QuoteAdapter =>
+  async (payload) => {
+    const response = await fetch(`${baseUrl}/api/quote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (response.ok) {
+      const data = (await response.json().catch(() => ({}))) as { reference?: string };
+      return { ok: true, reference: data.reference };
+    }
+    return {
+      ok: false,
+      error: response.status === 429 ? 'rate-limited' : `http-${response.status}`,
+    };
+  };
 
-const activeAdapter: QuoteAdapter = mockAdapter;
+const apiUrl = process.env.NEXT_PUBLIC_QUOTE_API_URL?.trim().replace(/\/$/, '') || null;
+
+/** True while the mock is wired in; drives the "nothing was sent" notice. */
+export const isMockSubmission = apiUrl === null;
+
+const activeAdapter: QuoteAdapter = apiUrl ? httpAdapter(apiUrl) : mockAdapter;
 
 /**
  * Submit a quote request. Bot submissions caught by the honeypot are reported as

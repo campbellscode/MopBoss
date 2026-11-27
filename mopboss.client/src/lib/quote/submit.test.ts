@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { initialState } from './machine';
-import { mockAdapter, submitQuoteRequest, toPayload, type QuoteAdapter } from './submit';
+import {
+  httpAdapter,
+  isMockSubmission,
+  mockAdapter,
+  submitQuoteRequest,
+  toPayload,
+  type QuoteAdapter,
+} from './submit';
 
 const answers = {
   ...initialState().answers,
@@ -74,5 +81,45 @@ describe('submitQuoteRequest', () => {
     await expect(pending).resolves.toEqual({ ok: true, reference: 'demo' });
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+  });
+});
+
+describe('httpAdapter', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('posts the JSON payload to MopBoss.Server and accepts a 202', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ reference: 'ab12cd34' }), { status: 202 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const payload = toPayload(answers);
+
+    const result = await httpAdapter('https://api.mopboss.test')(payload);
+
+    expect(result).toEqual({ ok: true, reference: 'ab12cd34' });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://api.mopboss.test/api/quote');
+    expect(init).toMatchObject({ method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    expect(JSON.parse(init.body)).toEqual(JSON.parse(JSON.stringify(payload)));
+  });
+
+  it('reports validation and rate-limit refusals as failures', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 400 })));
+    await expect(httpAdapter('https://api.mopboss.test')(toPayload(answers))).resolves.toEqual({
+      ok: false,
+      error: 'http-400',
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 429 })));
+    await expect(httpAdapter('https://api.mopboss.test')(toPayload(answers))).resolves.toEqual({
+      ok: false,
+      error: 'rate-limited',
+    });
+  });
+
+  it('keeps the mock (and its demo notice) when no API URL is configured', () => {
+    expect(process.env.NEXT_PUBLIC_QUOTE_API_URL).toBeUndefined();
+    expect(isMockSubmission).toBe(true);
   });
 });
