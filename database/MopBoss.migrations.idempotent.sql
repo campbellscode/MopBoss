@@ -60,6 +60,25 @@ IF NOT EXISTS (
     WHERE [MigrationId] = N'20261127155840_QuoteLifecycleAndNotificationOutbox'
 )
 BEGIN
+    EXEC(N'
+    DECLARE @badRooms int = (SELECT COUNT(*) FROM [QuoteRequests] WHERE [Bedrooms] NOT BETWEEN 0 AND 9 OR [Bathrooms] NOT BETWEEN 1 AND 9);
+    DECLARE @noContact int = (SELECT COUNT(*) FROM [QuoteRequests] WHERE [Phone] IS NULL AND [Email] IS NULL);
+    DECLARE @tooMany int = CASE WHEN (SELECT COUNT(*) FROM [QuoteRequests]) > 99999999 THEN 1 ELSE 0 END;
+    IF @badRooms + @noContact + @tooMany > 0
+    BEGIN
+        DECLARE @msg nvarchar(400) = CONCAT(N''MopBoss migration preflight failed: '', @badRooms,
+            N'' row(s) with bedrooms/bathrooms out of range, '', @noContact,
+            N'' row(s) without phone or email'', CASE WHEN @tooMany = 1 THEN N'', and too many rows for legacy references'' ELSE N'''' END,
+            N''. Fix or remove those rows, then rerun. Nothing was changed.'');
+        THROW 50001, @msg, 1;
+    END');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127155840_QuoteLifecycleAndNotificationOutbox'
+)
+BEGIN
     DROP INDEX [IX_QuoteRequests_ReceivedAt] ON [QuoteRequests];
 END;
 
@@ -124,7 +143,11 @@ IF NOT EXISTS (
     WHERE [MigrationId] = N'20261127155840_QuoteLifecycleAndNotificationOutbox'
 )
 BEGIN
-    EXEC(N'UPDATE [QuoteRequests] SET [Reference] = ''MB-'' + UPPER(LEFT(REPLACE(CONVERT(char(36), [Id]), ''-'', ''''), 9)) WHERE [Reference] IS NULL;');
+    EXEC(N'
+    WITH numbered AS (
+        SELECT [Reference], ROW_NUMBER() OVER (ORDER BY [CreatedAtUtc], [Id]) AS n
+        FROM [QuoteRequests] WHERE [Reference] IS NULL)
+    UPDATE numbered SET [Reference] = ''MB-L'' + RIGHT(''00000000'' + CAST(n AS varchar(8)), 8);');
 END;
 
 IF NOT EXISTS (

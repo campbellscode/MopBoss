@@ -17,6 +17,21 @@ namespace MopBoss.Server.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // 0. Preflight: refuse, before changing anything, if existing rows would break the
+            //    new constraints. The migration runs in a transaction, so nothing is applied.
+            migrationBuilder.Sql(Deferred(@"
+DECLARE @badRooms int = (SELECT COUNT(*) FROM [QuoteRequests] WHERE [Bedrooms] NOT BETWEEN 0 AND 9 OR [Bathrooms] NOT BETWEEN 1 AND 9);
+DECLARE @noContact int = (SELECT COUNT(*) FROM [QuoteRequests] WHERE [Phone] IS NULL AND [Email] IS NULL);
+DECLARE @tooMany int = CASE WHEN (SELECT COUNT(*) FROM [QuoteRequests]) > 99999999 THEN 1 ELSE 0 END;
+IF @badRooms + @noContact + @tooMany > 0
+BEGIN
+    DECLARE @msg nvarchar(400) = CONCAT(N'MopBoss migration preflight failed: ', @badRooms,
+        N' row(s) with bedrooms/bathrooms out of range, ', @noContact,
+        N' row(s) without phone or email', CASE WHEN @tooMany = 1 THEN N', and too many rows for legacy references' ELSE N'' END,
+        N'. Fix or remove those rows, then rerun. Nothing was changed.');
+    THROW 50001, @msg, 1;
+END"));
+
             // 1. Timestamps: the existing receive time becomes the creation time.
             migrationBuilder.DropIndex(name: "IX_QuoteRequests_ReceivedAt", table: "QuoteRequests");
             migrationBuilder.RenameColumn(name: "ReceivedAt", table: "QuoteRequests", newName: "CreatedAtUtc");
@@ -40,10 +55,13 @@ namespace MopBoss.Server.Data.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "Reference", table: "QuoteRequests", type: "varchar(12)", unicode: false,
                 maxLength: 12, nullable: true);
-            // Legacy rows: "MB-" plus nine hex digits of the existing Id (unique in practice).
-            migrationBuilder.Sql(Deferred(
-                "UPDATE [QuoteRequests] SET [Reference] = 'MB-' + UPPER(LEFT(REPLACE(CONVERT(char(36), [Id]), '-', ''), 9)) " +
-                "WHERE [Reference] IS NULL;"));
+            // Legacy rows: "MB-L" plus an 8-digit sequence in creation order (MB-L00000001...).
+            // Collision-free by construction, and never equal to a new 6-character reference.
+            migrationBuilder.Sql(Deferred(@"
+WITH numbered AS (
+    SELECT [Reference], ROW_NUMBER() OVER (ORDER BY [CreatedAtUtc], [Id]) AS n
+    FROM [QuoteRequests] WHERE [Reference] IS NULL)
+UPDATE numbered SET [Reference] = 'MB-L' + RIGHT('00000000' + CAST(n AS varchar(8)), 8);"));
             migrationBuilder.AlterColumn<string>(
                 name: "Reference", table: "QuoteRequests", type: "varchar(12)", unicode: false,
                 maxLength: 12, nullable: false, oldClrType: typeof(string), oldType: "varchar(12)",

@@ -51,7 +51,7 @@ VALUES ('11111111-1111-1111-1111-111111111111', '2026-11-20T10:00:00+00:00', 'De
         Assert.All(quotes, q =>
         {
             Assert.Equal(QuoteStatus.New, q.Status);
-            Assert.Matches("^MB-[0-9A-F]{9}$", q.Reference);
+            Assert.Matches("^MB-L[0-9]{8}$", q.Reference);
             Assert.NotNull(q.Notification);
         });
         Assert.Equal(new DateTimeOffset(2026, 11, 20, 10, 0, 0, TimeSpan.Zero), quotes[0].CreatedAtUtc);
@@ -59,6 +59,48 @@ VALUES ('11111111-1111-1111-1111-111111111111', '2026-11-20T10:00:00+00:00', 'De
         // The Phase 2 request that never reached Linda is now queued for delivery.
         Assert.Equal(NotificationStatus.Pending, quotes[1].Notification!.Status);
         Assert.Equal("Legacy", quotes[1].Notification!.LastError);
+    }
+
+    [Fact]
+    public async Task Legacy_references_cannot_collide_even_when_ids_share_a_prefix()
+    {
+        var cs = sql.NewDatabase();
+        await using (var db = SqlServerFixture.Context(cs))
+        {
+            await db.Database.GetService<IMigrator>().MigrateAsync("20261127153823_InitialQuoteRequests");
+            // Under the old scheme ("MB-" + first 9 hex digits) these two collided and the
+            // unique index failed half-way through the migration.
+            await db.Database.ExecuteSqlRawAsync(@"
+INSERT INTO QuoteRequests (Id, ReceivedAt, Service, Property, Bedrooms, Bathrooms, SquareFeet, Frequency, Name, Phone)
+VALUES ('ABCDEF12-3000-0000-0000-000000000001', '2026-11-01T10:00:00+00:00', 'Deep Cleaning', 'House', 2, 1, 'Not sure', 'Weekly', 'Ann', '5135550100'),
+       ('ABCDEF12-3999-0000-0000-000000000002', '2026-11-02T10:00:00+00:00', 'Deep Cleaning', 'House', 2, 1, 'Not sure', 'Weekly', 'Bo', '5135550101');");
+
+            await db.Database.MigrateAsync();
+        }
+
+        await using var check = SqlServerFixture.Context(cs);
+        var references = await check.QuoteRequests.OrderBy(q => q.CreatedAtUtc).Select(q => q.Reference).ToListAsync();
+        Assert.Equal(["MB-L00000001", "MB-L00000002"], references);
+    }
+
+    [Fact]
+    public async Task The_migration_refuses_legacy_rows_that_break_the_new_constraints_and_changes_nothing()
+    {
+        var cs = sql.NewDatabase();
+        await using var db = SqlServerFixture.Context(cs);
+        await db.Database.GetService<IMigrator>().MigrateAsync("20261127153823_InitialQuoteRequests");
+        await db.Database.ExecuteSqlRawAsync(@"
+INSERT INTO QuoteRequests (Id, ReceivedAt, Service, Property, Bedrooms, Bathrooms, SquareFeet, Frequency, Name, Phone, Email)
+VALUES (NEWID(), '2026-11-01T10:00:00+00:00', 'Deep Cleaning', 'House', 2, 1, 'Not sure', 'Weekly', 'No Contact', NULL, NULL);");
+
+        var ex = await Assert.ThrowsAsync<SqlException>(() => db.Database.MigrateAsync());
+
+        Assert.Contains("preflight failed", ex.Message);
+        Assert.Contains("1 row(s) without phone or email", ex.Message);
+        Assert.Equal(["20261127153823_InitialQuoteRequests"], await db.Database.GetAppliedMigrationsAsync());
+        // Still the Phase 2 shape: nothing was half-applied.
+        Assert.Equal(1, await db.Database.SqlQueryRaw<int>(
+            "SELECT COUNT(*) AS [Value] FROM sys.columns WHERE object_id = OBJECT_ID('QuoteRequests') AND name = 'ReceivedAt'").SingleAsync());
     }
 
     [Fact]
