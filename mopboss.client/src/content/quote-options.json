@@ -1,0 +1,15 @@
+{
+  "$comment": "DRAFT, awaiting Linda's approval. Single source of truth for quote-form choices: the website renders these and MopBoss.Server rejects anything else. Service names must match src/content/services.ts (a test checks).",
+  "services": [
+    "Residential Cleaning",
+    "Deep Cleaning",
+    "Move-In / Move-Out",
+    "Recurring Housekeeping",
+    "Specialty Cleaning"
+  ],
+  "properties": ["House", "Apartment or condo", "Townhome", "Something else"],
+  "sizes": ["Under 1,000 sq ft", "1,000 to 2,000", "2,000 to 3,000", "3,000+", "Not sure"],
+  "frequencies": ["One-time", "Weekly", "Every two weeks", "Monthly"],
+  "bedrooms": { "min": 0, "max": 9, "initial": 2 },
+  "bathrooms": { "min": 1, "max": 9, "initial": 1 }
+}

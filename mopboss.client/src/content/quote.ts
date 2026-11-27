@@ -1,37 +1,40 @@
 import type { Headline } from '@/components/ui/Type';
+import options from './quote-options.json';
 import { services } from './services';
 
 /**
  * DRAFT: every option list in the quote form is a suggestion awaiting Linda's approval.
- * The service options come from ./services so the menu and the form never drift apart.
+ * The allowed values live in ./quote-options.json, which MopBoss.Server also embeds, so
+ * the form and the API always agree. Hints are display copy and stay here.
  */
 
 export type QuoteOption = { value: string; hint?: string };
 
+const hints: Record<string, string> = {
+  House: 'Single-family home',
+  'Apartment or condo': 'One level, shared building',
+  Townhome: 'Multi-level, attached',
+  'Something else': 'Tell Linda in the notes',
+  'One-time': 'Just this once',
+  Weekly: 'Every week',
+  'Every two weeks': 'Twice a month',
+  Monthly: 'Once a month',
+};
+
+const withHints = (values: readonly string[]): QuoteOption[] =>
+  values.map((value) => (hints[value] ? { value, hint: hints[value] } : { value }));
+
 export const quoteOptions = {
   services: services.map((s): QuoteOption => ({ value: s.name, hint: s.quoteHint })),
-  properties: [
-    { value: 'House', hint: 'Single-family home' },
-    { value: 'Apartment or condo', hint: 'One level, shared building' },
-    { value: 'Townhome', hint: 'Multi-level, attached' },
-    { value: 'Something else', hint: 'Tell Linda in the notes' },
-  ] satisfies QuoteOption[],
-  sizes: [
-    { value: 'Under 1,000 sq ft' },
-    { value: '1,000 to 2,000' },
-    { value: '2,000 to 3,000' },
-    { value: '3,000+' },
-    { value: 'Not sure' },
-  ] satisfies QuoteOption[],
-  frequencies: [
-    { value: 'One-time', hint: 'Just this once' },
-    { value: 'Weekly', hint: 'Every week' },
-    { value: 'Every two weeks', hint: 'Twice a month' },
-    { value: 'Monthly', hint: 'Once a month' },
-  ] satisfies QuoteOption[],
-  bedrooms: { min: 0, max: 9, initial: 2 },
-  bathrooms: { min: 1, max: 9, initial: 1 },
+  properties: withHints(options.properties),
+  sizes: withHints(options.sizes),
+  frequencies: withHints(options.frequencies),
+  bedrooms: options.bedrooms,
+  bathrooms: options.bathrooms,
 } as const;
+
+/** Allowed service names as the API sees them (checked against services.ts by a test). */
+export const allowedServices: readonly string[] = options.services;
 
 type StepCopy = { eyebrow: string; heading: Headline; hint: string; lead?: string };
 
