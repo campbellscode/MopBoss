@@ -1,15 +1,16 @@
-import { deployment } from '@/lib/deployment';
+import { deployment, type Deployment } from '@/lib/deployment';
 import type { QuoteAnswers, SubmitFailure, SubmitResult } from './machine';
 
 /**
  * The single seam between the quote form and wherever requests end up.
  *
- * - live: NEXT_PUBLIC_QUOTE_API_URL is set. Requests go to MopBoss.Server, which
+ * - live: a valid NEXT_PUBLIC_QUOTE_API_URL. Requests go to MopBoss.Server, which
  *   stores them and queues Linda's email.
- * - demo: no API URL outside production. Nothing is sent, and the confirmation says so.
- * - unavailable: a production build without an API URL (the build guard in
- *   next.config.ts normally stops this). The form tells visitors to phone Linda
- *   instead of pretending to send.
+ * - demo: only with an explicit NEXT_PUBLIC_QUOTE_MODE=demo outside production.
+ *   Nothing is sent, and the confirmation says so.
+ * - unavailable: anything else (missing, invalid or unsafe settings). The build guard
+ *   in next.config.ts normally stops such a build; if one slips through, the form tells
+ *   visitors to phone Linda instead of pretending to send.
  */
 
 export type QuoteRequestPayload = {
@@ -80,56 +81,62 @@ export const unavailableAdapter: QuoteAdapter = async () => ({ ok: false, failur
  * Posts to MopBoss.Server. 202 (stored) and 200 (a replay of the same request) both
  * carry the reference. Anything that leaves the outcome unknown (network error,
  * timeout, 5xx, a malformed reply) is "uncertain": retrying with the same key is safe.
+ * The timeout covers the whole exchange, including reading the reply body.
  */
 export const httpAdapter =
   (baseUrl: string, timeoutMs = SUBMIT_TIMEOUT_MS): QuoteAdapter =>
   async (payload, idempotencyKey) => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
-    let response: Response;
+    // Rejects when the deadline passes, so a reply whose body stalls cannot hang the form.
+    const deadline = new Promise<never>((_, reject) =>
+      controller.signal.addEventListener('abort', () => reject(new Error('timeout')), {
+        once: true,
+      }),
+    );
+    deadline.catch(() => {}); // raced below; never an unhandled rejection
     try {
-      response = await fetch(`${baseUrl}/api/quote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-        credentials: 'omit',
-      });
-    } catch {
-      return { ok: false, failure: 'uncertain' };
+      let response: Response;
+      try {
+        response = await Promise.race([
+          fetch(`${baseUrl}/api/quote`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+            credentials: 'omit',
+          }),
+          deadline,
+        ]);
+      } catch {
+        return { ok: false, failure: 'uncertain' };
+      }
+
+      if (response.status === 200 || response.status === 202) {
+        const data = (await Promise.race([response.json(), deadline]).catch(() => null)) as {
+          reference?: unknown;
+        } | null;
+        return typeof data?.reference === 'string' && REFERENCE.test(data.reference)
+          ? { ok: true, result: { mode: 'live', reference: data.reference } }
+          : { ok: false, failure: 'uncertain' };
+      }
+      if (response.status === 429) return { ok: false, failure: 'rate-limited' };
+      if (response.status === 422) return { ok: false, failure: 'conflict' };
+      if (response.status >= 500) return { ok: false, failure: 'uncertain' };
+      return { ok: false, failure: 'invalid' };
     } finally {
       clearTimeout(timer);
+      controller.abort(); // release any body left unread
     }
-
-    if (response.status === 200 || response.status === 202) {
-      const data = (await response.json().catch(() => null)) as { reference?: unknown } | null;
-      return typeof data?.reference === 'string' && REFERENCE.test(data.reference)
-        ? { ok: true, result: { mode: 'live', reference: data.reference } }
-        : { ok: false, failure: 'uncertain' };
-    }
-    if (response.status === 429) return { ok: false, failure: 'rate-limited' };
-    if (response.status === 422) return { ok: false, failure: 'conflict' };
-    if (response.status >= 500) return { ok: false, failure: 'uncertain' };
-    return { ok: false, failure: 'invalid' };
   };
 
-export type SubmissionMode = 'live' | 'demo' | 'unavailable';
-
-export function submissionMode(
-  apiUrl = deployment.quoteApiUrl,
-  env = deployment.env,
-): SubmissionMode {
-  if (apiUrl) return 'live';
-  return env === 'production' ? 'unavailable' : 'demo';
-}
-
 /** True while requests go nowhere; drives the demo wording on the confirmation. */
-export const isDemoSubmission = submissionMode() === 'demo';
+export const isDemoSubmission = deployment.mode === 'demo';
 
-function activeAdapter(): QuoteAdapter {
-  const mode = submissionMode();
-  if (mode === 'live') return httpAdapter(deployment.quoteApiUrl!);
-  return mode === 'demo' ? demoAdapter : unavailableAdapter;
+/** The adapter for a resolved deployment: live, demo, or an honest "unavailable". */
+export function adapterFor(resolved: Deployment = deployment): QuoteAdapter {
+  if (resolved.mode === 'live' && resolved.quoteApiUrl) return httpAdapter(resolved.quoteApiUrl);
+  return resolved.mode === 'demo' ? demoAdapter : unavailableAdapter;
 }
 
 /**
@@ -139,7 +146,7 @@ function activeAdapter(): QuoteAdapter {
 export async function submitQuoteRequest(
   payload: QuoteRequestPayload,
   idempotencyKey: string,
-  adapter: QuoteAdapter = activeAdapter(),
+  adapter: QuoteAdapter = adapterFor(),
 ): Promise<SubmitOutcome> {
   try {
     return await adapter(payload, idempotencyKey);

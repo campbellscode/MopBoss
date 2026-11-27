@@ -4,17 +4,22 @@ const ROUTES = ['/', '/services', '/about', '/gallery', '/quote'];
 const WIDTHS = [320, 375, 390, 768, 1024, 1440, 1920];
 
 /** Collects console errors (CSP violations show up here) and uncaught exceptions. */
-function watchErrors(page: Page) {
+function watchErrors(page: Page, browserName: string, baseURL: string | undefined) {
   const errors: string[] = [];
-  // WebKit reports a same-origin Next.js prefetch (?_rsc=) cancelled by navigation as an
-  // "access control" error, both as a console message and as an unhandled rejection.
-  // It is not a CSP or CORS failure. Everything else counts.
-  const prefetchAborted = /\?_rsc=.*due to access control checks/;
+  // WebKit only: a same-origin Next.js prefetch (?_rsc=) cancelled by navigation is
+  // reported as an "access control" error, as a console message and an unhandled
+  // rejection. It is not a CSP or CORS failure. The pattern is pinned to this site's own
+  // origin and the exact message, so a real cross-origin or CSP failure still counts.
+  const origin = new URL(baseURL!).origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const prefetchAborted = new RegExp(
+    `^Fetch API cannot load ${origin}/[A-Za-z0-9/_-]*\\?_rsc=[A-Za-z0-9_-]+ due to access control checks\\.$`,
+  );
+  const ignore = (text: string) => browserName === 'webkit' && prefetchAborted.test(text);
   page.on('console', (msg) => {
-    if (msg.type() === 'error' && !prefetchAborted.test(msg.text())) errors.push(msg.text());
+    if (msg.type() === 'error' && !ignore(msg.text())) errors.push(msg.text());
   });
   page.on('pageerror', (err) => {
-    if (!prefetchAborted.test(err.message)) errors.push(err.message);
+    if (!ignore(err.message)) errors.push(err.message);
   });
   return errors;
 }
@@ -22,8 +27,10 @@ function watchErrors(page: Page) {
 for (const route of ROUTES) {
   test(`${route} fits every width, has one h1, no placeholders and no console errors`, async ({
     page,
+    browserName,
+    baseURL,
   }) => {
-    const errors = watchErrors(page);
+    const errors = watchErrors(page, browserName, baseURL);
     for (const width of WIDTHS) {
       await page.setViewportSize({ width, height: 900 });
       // Let prefetches settle: WebKit logs an aborted prefetch as an "access control" error.
@@ -90,7 +97,7 @@ test('the gallery sweep reaches 100% and announces it', async ({ page }) => {
   await expect(page.getByRole('slider', { name: /before and after reveal/i })).toHaveValue('100');
 });
 
-test('the magnetic CTA follows the cursor by the prototype amounts', async ({
+test('the magnetic CTA follows the cursor by the prototype amounts, capped at 12px', async ({
   page,
   browserName,
 }) => {
@@ -107,12 +114,13 @@ test('the magnetic CTA follows the cursor by the prototype amounts', async ({
     const m = t.match(/-?[\d.]+/g)?.map(Number) ?? [];
     return { x: m[4] ?? 0, y: m[5] ?? 0 };
   };
-  await expect.poll(async () => (await offset()).x, { timeout: 3000 }).toBeGreaterThan(30);
+  await expect.poll(async () => (await offset()).x, { timeout: 3000 }).toBeGreaterThan(5);
   await page.waitForTimeout(400);
   const { x, y } = await offset();
-  // x = (offset from centre) × 0.22, y = × 0.34, as in Main.dc.html.
-  expect(x).toBeCloseTo((box.width / 2 - 2) * 0.22, 0);
-  expect(y).toBeCloseTo((box.height / 2 - 2) * 0.34, 0);
+  // x = (offset from centre) × 0.22, y = × 0.34, as in Main.dc.html, each capped at 12px.
+  expect(x).toBeCloseTo(Math.min((box.width / 2 - 2) * 0.22, 12), 0);
+  expect(y).toBeCloseTo(Math.min((box.height / 2 - 2) * 0.34, 12), 0);
+  expect(Math.max(Math.abs(x), Math.abs(y))).toBeLessThanOrEqual(12);
   test.info().annotations.push({
     type: 'magnetic',
     description: `max offset ${x.toFixed(1)}px, ${y.toFixed(1)}px`,

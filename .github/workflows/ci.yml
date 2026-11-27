@@ -34,13 +34,16 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
-      - name: Production launch guard refuses an incomplete production build
-        run: |
-          if NEXT_PUBLIC_DEPLOY_ENV=production npx next build > guard.log 2>&1; then
-            echo "A production build without an API URL must fail"; exit 1
-          fi
-          grep -q "Refusing to build for production" guard.log
+      - name: Production build (placeholder https addresses; never deployed)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_DEPLOY_ENV: production
+          NEXT_PUBLIC_QUOTE_MODE: live
+          NEXT_PUBLIC_QUOTE_API_URL: https://api.example.invalid
+          NEXT_PUBLIC_SITE_URL: https://www.example.invalid
+          NEXT_PUBLIC_CONTENT_AUDIT: '0'
+      - name: Build guard refuses omitted, invalid and unsafe deployments
+        run: npm run check:build-guard
       - name: Vulnerability audit (runtime dependencies)
         run: npm audit --omit=dev --audit-level=high
 

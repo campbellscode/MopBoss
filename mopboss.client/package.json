@@ -16,6 +16,7 @@
     "build:audit": "node scripts/with-audit.mjs build",
     "content:needed": "vitest run src/content/needed.test.ts -u",
     "build:e2e": "node scripts/build-e2e.mjs",
+    "check:build-guard": "node scripts/check-build-guard.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

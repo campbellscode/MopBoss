@@ -28,17 +28,26 @@ const SPOTS: Record<'hero' | 'band', SparkleSpot[]> = {
   ],
 };
 
+/** Furthest the button may lean from rest, in px, on either axis. */
+export const MAGNETIC_MAX_PX = 12;
+
+const clamp = (v: number) => Math.max(-MAGNETIC_MAX_PX, Math.min(MAGNETIC_MAX_PX, v));
+
 /** Offset of the button from rest for a cursor at (x, y) inside the halo rect. */
-export function magneticOffset(rect: DOMRect, x: number, y: number) {
+export function magneticOffset(
+  rect: Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>,
+  x: number,
+  y: number,
+) {
   return {
-    x: (x - rect.left - rect.width / 2) * 0.22,
-    y: (y - rect.top - rect.height / 2) * 0.34,
+    x: clamp((x - rect.left - rect.width / 2) * 0.22),
+    y: clamp((y - rect.top - rect.height / 2) * 0.34),
   };
 }
 
 /**
  * The Boss Treatment: the wrapped button leans toward the cursor inside a 16px
- * halo (x offset × 0.22, y offset × 0.34) and three sparkles pop on hover.
+ * halo (x offset × 0.22, y offset × 0.34, each capped at 12px) and three sparkles pop on hover.
  * Reduced motion: the button stays put and the sparkles stay hidden.
  */
 export function Magnetic({

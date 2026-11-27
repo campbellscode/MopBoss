@@ -44,9 +44,15 @@ describe('Boss buttons', () => {
 describe('Magnetic (the Boss Treatment)', () => {
   const rect = { left: 0, top: 0, width: 200, height: 100 } as DOMRect;
 
-  it('pulls x by 0.22 and y by 0.34 of the offset from centre', () => {
-    expect(magneticOffset(rect, 200, 100)).toEqual({ x: 22, y: 17 });
+  it('pulls x by 0.22 and y by 0.34 of the offset from centre, never more than 12px', () => {
+    const near = magneticOffset(rect, 150, 70);
+    expect(near.x).toBeCloseTo(11);
+    expect(near.y).toBeCloseTo(6.8);
     expect(magneticOffset(rect, 100, 50)).toEqual({ x: 0, y: 0 });
+    // Uncapped these would be 22px and 17px.
+    expect(magneticOffset(rect, 200, 100)).toEqual({ x: 12, y: 12 });
+    expect(magneticOffset(rect, 0, 0)).toEqual({ x: -12, y: -12 });
+    expect(magneticOffset(rect, -5000, 5000)).toEqual({ x: -12, y: 12 });
   });
 
   function setup() {
@@ -64,8 +70,10 @@ describe('Magnetic (the Boss Treatment)', () => {
   it('moves the button toward the cursor and resets on leave', () => {
     mockReducedMotion(false);
     const { link, halo } = setup();
+    fireEvent.mouseMove(halo, { clientX: 150, clientY: 70 });
+    expect(link.style.transform).toBe('translate(11px, 6.8px)');
     fireEvent.mouseMove(halo, { clientX: 200, clientY: 100 });
-    expect(link.style.transform).toBe('translate(22px, 17px)');
+    expect(link.style.transform).toBe('translate(12px, 12px)');
     fireEvent.mouseLeave(halo);
     expect(link.style.transform).toBe('');
   });

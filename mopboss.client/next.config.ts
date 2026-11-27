@@ -1,12 +1,6 @@
 import type { NextConfig } from 'next';
+import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 import { deployProblems, securityHeaders } from './src/lib/deployGuard';
-
-// A production build (NEXT_PUBLIC_DEPLOY_ENV=production) refuses to build if it would
-// ship the demo quote form, audit chips or non-https URLs.
-const problems = deployProblems(process.env);
-if (problems.length > 0) {
-  throw new Error(`Refusing to build for production:\n - ${problems.join('\n - ')}`);
-}
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
@@ -24,4 +18,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// `next build` refuses to run unless the deployment is stated explicitly and safely
+// (see src/lib/deployGuard.ts). `next dev` reads .env.development instead. `next typegen`
+// loads the config in the build phase too but builds nothing, so it is not checked.
+export default function config(phase: string): NextConfig {
+  if (phase === PHASE_PRODUCTION_BUILD && !process.argv.includes('typegen')) {
+    const problems = deployProblems(process.env);
+    if (problems.length > 0) throw new Error(`Refusing to build:\n - ${problems.join('\n - ')}`);
+  }
+  return nextConfig;
+}

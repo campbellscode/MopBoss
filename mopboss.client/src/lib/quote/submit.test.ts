@@ -3,7 +3,7 @@ import { initialState } from './machine';
 import {
   demoAdapter,
   httpAdapter,
-  submissionMode,
+  adapterFor,
   submitQuoteRequest,
   toPayload,
   unavailableAdapter,
@@ -129,16 +129,49 @@ describe('httpAdapter', () => {
   });
 });
 
-describe('modes', () => {
-  it('uses the API whenever a URL is configured', () => {
-    expect(submissionMode(API, 'production')).toBe('live');
-    expect(submissionMode(API, 'development')).toBe('live');
+describe('httpAdapter deadline', () => {
+  it('times out a reply whose body never finishes, and releases the request', async () => {
+    vi.useFakeTimers();
+    let signal: AbortSignal | undefined;
+    const stalled = new ReadableStream({
+      start(c) {
+        c.enqueue(new TextEncoder().encode('{"reference":"MB-7K')); // never closes
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        signal = init.signal ?? undefined;
+        return new Response(stalled, { status: 202 });
+      }),
+    );
+    const pending = httpAdapter(API, 1000)(toPayload(answers), KEY);
+    await vi.advanceTimersByTimeAsync(1000);
+    await expect(pending).resolves.toEqual({ ok: false, failure: 'uncertain' });
+    expect(signal?.aborted).toBe(true);
   });
 
-  it('never falls back to the demo in a production build', () => {
-    expect(submissionMode(null, 'production')).toBe('unavailable');
-    expect(submissionMode(null, 'preview')).toBe('demo');
-    expect(submissionMode(null, 'development')).toBe('demo');
+  it('still succeeds when the body arrives before the deadline', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('{"reference":"MB-7K3Q9X"}', { status: 202 })),
+    );
+    await expect(httpAdapter(API, 1000)(toPayload(answers), KEY)).resolves.toEqual({
+      ok: true,
+      result: { mode: 'live', reference: 'MB-7K3Q9X' },
+    });
+  });
+});
+
+describe('modes', () => {
+  it('picks the adapter from the resolved deployment and fails closed', () => {
+    expect(adapterFor({ env: 'development', mode: 'demo', quoteApiUrl: null })).toBe(demoAdapter);
+    expect(adapterFor({ env: null, mode: 'unavailable', quoteApiUrl: null })).toBe(
+      unavailableAdapter,
+    );
+    expect(adapterFor({ env: 'production', mode: 'live', quoteApiUrl: null })).toBe(
+      unavailableAdapter,
+    );
   });
 
   it('demo reports demo, and unavailable reports a failure instead of success', async () => {
