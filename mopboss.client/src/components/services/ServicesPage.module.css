@@ -1,0 +1,266 @@
+/* ---------- Hero ---------- */
+
+.hero {
+  position: relative;
+  padding: 80px 0 54px;
+  overflow: hidden;
+}
+
+.heroInner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.heroTitle {
+  font-size: clamp(36px, 6vw, 88px);
+  max-width: 1000px;
+}
+
+.lead {
+  margin: 0;
+  max-width: 560px;
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+  color: var(--color-body-grey);
+}
+
+/* ---------- Sticky jump navigation ---------- */
+
+.jumpBar {
+  position: sticky;
+  top: 86px;
+  z-index: 40;
+  background: #fffffff2;
+  backdrop-filter: blur(10px);
+  border-top: var(--rule);
+  border-bottom: var(--rule);
+  margin-bottom: -2px;
+}
+
+.jumpNav {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  scrollbar-width: none;
+}
+
+.jumpNav::-webkit-scrollbar {
+  display: none;
+}
+
+.jump {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--color-ink);
+  background: var(--color-white);
+  color: var(--color-ink);
+  text-decoration: none;
+  font: 600 14px/1 var(--font-body);
+  transition: background 0.2s;
+}
+
+.jump:hover {
+  background: var(--color-boss-pink);
+  color: var(--color-ink);
+}
+
+.jump :global(.accent) {
+  font-size: 20px;
+  color: inherit;
+}
+
+/* ---------- Service sections ---------- */
+
+.service {
+  padding: 60px 0;
+  border-top: var(--rule);
+  color: var(--color-ink);
+}
+
+/* Clear the sticky header and jump bar (beats the global section[id] offset) */
+.service[id] {
+  scroll-margin-top: 150px;
+}
+
+.groundWhite {
+  background: var(--color-white);
+}
+
+.groundBlush {
+  background: var(--color-blush);
+}
+
+.groundInk {
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+
+.groundPink {
+  background: var(--color-boss-pink);
+}
+
+.serviceLayout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 36px 64px;
+}
+
+.visual {
+  position: relative;
+  flex: 1 1 340px;
+  min-width: 0;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  order: 0;
+}
+
+.visualFlipped {
+  order: 2;
+}
+
+.bigNum {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-58%, -52%);
+  font-size: clamp(190px, 24vw, 330px);
+  line-height: 0.8;
+  color: var(--color-boss-pink);
+}
+
+.groundPink .bigNum {
+  color: var(--color-white);
+}
+
+.iconMedallion {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  margin-left: 110px;
+  margin-top: 70px;
+  border-radius: 50%;
+  background: var(--color-white);
+  box-shadow:
+    0 0 0 6px var(--color-boss-pink),
+    0 0 0 12px var(--color-ink),
+    0 30px 44px -20px #0000004d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text {
+  flex: 1.4 1 460px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  order: 1;
+}
+
+.serviceEyebrow {
+  color: var(--color-deep-pink);
+}
+
+.groundInk .serviceEyebrow {
+  color: var(--color-pink-on-ink);
+}
+
+.groundPink .serviceEyebrow {
+  color: var(--color-ink);
+}
+
+.serviceTitle {
+  font-size: clamp(28px, 3.9vw, 56px);
+}
+
+.tagline {
+  font-size: clamp(24px, 2.5vw, 34px);
+  line-height: 1.1;
+  color: var(--color-deep-pink);
+}
+
+.groundInk .tagline {
+  color: var(--color-pink-on-ink);
+}
+
+.groundPink .tagline {
+  color: var(--color-ink);
+}
+
+.description {
+  margin: 0;
+  max-width: 540px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--color-body-grey);
+}
+
+.groundInk .description {
+  color: var(--color-body-on-ink);
+}
+
+.groundPink .description {
+  color: var(--color-ink);
+}
+
+.goodFor {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.goodForPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  border: 2px solid currentColor;
+  font: 600 14px/1 var(--font-body);
+}
+
+.inclusions {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.pricing {
+  margin: 0;
+  font: 700 16px/1.4 var(--font-body);
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quoteLink {
+  margin-top: 6px;
+}
+
+@media (max-width: 759.98px) {
+  .iconMedallion {
+    margin-left: 80px;
+  }
+}
