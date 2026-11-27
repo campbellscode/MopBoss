@@ -1,4 +1,6 @@
 .page {
+  /* Each step slides in from 28px to the right; clip so phones never scroll sideways. */
+  overflow-x: clip;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
