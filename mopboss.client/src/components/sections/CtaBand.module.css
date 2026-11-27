@@ -1,0 +1,139 @@
+.band {
+  position: relative;
+  background: var(--color-boss-pink);
+  overflow: hidden;
+  padding: 92px 0 96px;
+  border-top: 3px solid var(--color-ink);
+  border-bottom: 3px solid var(--color-ink);
+}
+
+.home {
+  padding: 104px 0 108px;
+}
+
+.decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 26px;
+}
+
+.home .inner {
+  gap: 30px;
+}
+
+.title {
+  font-size: clamp(32px, 5.4vw, 78px);
+  color: var(--color-ink);
+}
+
+.home .title {
+  font-size: clamp(34px, 6vw, 88px);
+}
+
+.body {
+  margin: 0;
+  max-width: 540px;
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.home .body {
+  max-width: 560px;
+  font-size: 19px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.call {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-ink);
+  font: 700 17px/1 var(--font-body);
+}
+
+.call:hover {
+  color: var(--color-ink);
+  text-decoration-thickness: 2px;
+}
+
+@media (min-width: 768px) {
+  .mobileOnly {
+    display: none !important;
+  }
+}
+
+/* Mobile homepage composition: left-aligned stack, full-width CTA without the arrow */
+@media (max-width: 767.98px) {
+  .home .desktopOnly {
+    display: none !important;
+  }
+
+  .home {
+    padding: 64px 0 68px;
+    border-bottom: 0;
+  }
+
+  .home .inner {
+    align-items: stretch;
+    text-align: left;
+    gap: 22px;
+  }
+
+  .home .title {
+    font-size: 34px;
+  }
+
+  .home .body {
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+
+  .home .actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 22px;
+  }
+
+  .home .actions > span {
+    display: block;
+    padding: 0;
+    margin: 0;
+  }
+
+  .home .cta {
+    display: flex;
+    width: 100%;
+    min-height: 60px;
+    padding: 0 24px;
+    font-size: 12.5px;
+    letter-spacing: 0.05em;
+  }
+
+  .home .cta::after,
+  .home .arrow {
+    display: none;
+  }
+
+  .home .call {
+    align-self: center;
+    font-size: 16px;
+  }
+}

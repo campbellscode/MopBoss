@@ -1,0 +1,47 @@
+.section {
+  padding: 96px 0 88px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.body {
+  margin: 0;
+  max-width: 380px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-body-grey);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+@media (max-width: 767.98px) {
+  .section {
+    padding: 56px 0 54px;
+  }
+
+  .stack {
+    gap: 22px;
+  }
+
+  .foot {
+    justify-content: flex-start;
+  }
+}

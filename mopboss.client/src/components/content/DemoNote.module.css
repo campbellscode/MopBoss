@@ -1,0 +1,5 @@
+.caption {
+  margin: 0;
+  font: 600 13.5px/1.4 var(--font-body);
+  color: var(--color-muted-grey);
+}
