@@ -32,13 +32,17 @@ public class NotificationBacklogHealthCheck(MopBossDbContext db, TimeProvider cl
     public static readonly TimeSpan StuckAfter = TimeSpan.FromMinutes(30);
     public static readonly TimeSpan FailedWindow = TimeSpan.FromDays(7);
 
+    /// <summary>Set by an operator (database/operations.sql, query E) once Linda has the request another way.</summary>
+    public const string HandledManually = "HandledManually";
+
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken)
     {
         var now = clock.GetUtcNow();
         var failedSince = now - FailedWindow;
         var stuckBefore = now - StuckAfter;
         var failed = await db.NotificationOutbox.CountAsync(
-            n => n.Status == NotificationStatus.Failed && n.UpdatedAtUtc >= failedSince, cancellationToken);
+            n => n.Status == NotificationStatus.Failed && n.UpdatedAtUtc >= failedSince
+                && n.LastError != HandledManually, cancellationToken);
         var stuck = await db.NotificationOutbox.CountAsync(
             n => n.Status == NotificationStatus.Pending && n.NextAttemptAtUtc < stuckBefore, cancellationToken);
 

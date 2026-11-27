@@ -38,12 +38,13 @@ SET Status = 'Pending', Attempts = 0, NextAttemptAtUtc = SYSUTCDATETIME(),
 WHERE Status = 'Failed' AND UpdatedAtUtc >= DATEADD(day, -7, SYSUTCDATETIME());
 
 -- E. Hand a failed request to Linda without email: read the details here and pass them
---    on by a secure route, then note it so the health check stops flagging it.
+--    on by a secure route, then mark it handled so the health check stops flagging it.
+--    The row stays Failed (it was never emailed); only the note changes.
 SELECT q.Reference, q.CreatedAtUtc, q.Service, q.Property, q.Bedrooms, q.Bathrooms,
        q.SquareFeet, q.Frequency, q.Name, q.Phone, q.Email, q.Zip, q.Notes
 FROM dbo.QuoteRequests q WHERE q.Reference = '<REFERENCE>';
 
-UPDATE n SET LastError = 'HandledManually', UpdatedAtUtc = DATEADD(day, -8, SYSUTCDATETIME()),
+UPDATE n SET LastError = 'HandledManually', UpdatedAtUtc = SYSUTCDATETIME(),
              ConcurrencyStamp = NEWID()
 FROM dbo.NotificationOutbox n JOIN dbo.QuoteRequests q ON q.Id = n.QuoteRequestId
 WHERE q.Reference = '<REFERENCE>' AND n.Status = 'Failed';
