@@ -214,6 +214,63 @@ VALUES (NEWID(), '2026-11-01T10:00:00+00:00', 'Deep Cleaning', 'House', 2, 1, 'N
     }
 
     [Fact]
+    public async Task The_runtime_identity_template_is_enough_for_the_api_and_no_more()
+    {
+        var cs = await sql.NewMigratedDatabaseAsync();
+        var login = $"mb_runtime_{Guid.NewGuid():N}"[..24];
+        var password = $"Rt!{Guid.NewGuid():N}aA1";
+        var template = await File.ReadAllTextAsync(FindRepoFile("database/least-privilege.sql"));
+        var grants = template.Split('\n').Select(l => l.Trim())
+            .Where(l => l.StartsWith("GRANT ", StringComparison.Ordinal) && l.Contains("[<RUNTIME_USER>]"))
+            .Select(l => l.Replace("<RUNTIME_USER>", login)).ToList();
+        Assert.Equal(4, grants.Count);
+
+        static async Task Exec(string connectionString, string text)
+        {
+            await using var conn = new SqlConnection(connectionString);
+            await conn.OpenAsync();
+            await using var cmd = new SqlCommand(text, conn);
+            await cmd.ExecuteNonQueryAsync();
+        }
+        await Exec(new SqlConnectionStringBuilder(cs) { InitialCatalog = "master" }.ConnectionString,
+            $"CREATE LOGIN [{login}] WITH PASSWORD = '{password}', CHECK_POLICY = OFF");
+        await Exec(cs, $"CREATE USER [{login}] FOR LOGIN [{login}];\n" + string.Join("\n", grants));
+        var runtime = new SqlConnectionStringBuilder(cs) { UserID = login, Password = password }.ConnectionString;
+
+        // Everything the API does, as the runtime identity.
+        await using (var db = SqlServerFixture.Context(runtime))
+        {
+            var key = Guid.NewGuid();
+            Assert.Equal(SubmissionOutcome.Created, (await Service(db).SubmitAsync(Payloads.Dto(), key, CancellationToken.None)).Outcome);
+            Assert.Equal(SubmissionOutcome.Replayed, (await Service(db).SubmitAsync(Payloads.Dto(), key, CancellationToken.None)).Outcome);
+            Assert.Equal(SubmissionOutcome.Duplicate, (await Service(db).SubmitAsync(Payloads.Dto(), Guid.NewGuid(), CancellationToken.None)).Outcome);
+
+            var notifier = new FakeNotifier();
+            await new NotificationDispatcher(db, notifier, Options.Create(new NotificationOptions()), TimeProvider.System,
+                NullLogger<NotificationDispatcher>.Instance).DispatchDueAsync(CancellationToken.None);
+            Assert.Equal(1, notifier.Calls);
+
+            var context = new HealthCheckContext();
+            Assert.Equal(HealthStatus.Healthy, (await new DatabaseHealthCheck(db).CheckHealthAsync(context, default)).Status);
+            Assert.Equal(HealthStatus.Healthy, (await new SchemaHealthCheck(db).CheckHealthAsync(context, default)).Status);
+            Assert.Equal(HealthStatus.Healthy,
+                (await new NotificationBacklogHealthCheck(db, TimeProvider.System).CheckHealthAsync(context, default)).Status);
+        }
+
+        // ...and nothing destructive.
+        foreach (var forbidden in new[]
+                 {
+                     "DELETE FROM dbo.QuoteRequests", "DELETE FROM dbo.IdempotencyKeys",
+                     "DELETE FROM dbo.NotificationOutbox", "CREATE TABLE dbo.Scratch (Id int)",
+                     "ALTER TABLE dbo.QuoteRequests ADD Extra int NULL", "DELETE FROM dbo.__EFMigrationsHistory",
+                 })
+        {
+            var ex = await Assert.ThrowsAsync<SqlException>(() => Exec(runtime, forbidden));
+            Assert.Contains(ex.Number, new[] { 229, 262, 1088, 4902 }); // permission denied
+        }
+    }
+
+    [Fact]
     public async Task Design_time_context_migrates_only_the_declared_target()
     {
         var cs = await sql.NewEmptyDatabaseAsync();
