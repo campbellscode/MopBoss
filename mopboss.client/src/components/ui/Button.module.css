@@ -1,0 +1,237 @@
+/* ---------- Boss button (.boss) ---------- */
+
+.boss {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 62px;
+  padding: 0 30px;
+  border-radius: var(--radius-pill);
+  background: var(--color-boss-pink);
+  color: var(--color-ink);
+  border: var(--outline);
+  box-shadow: var(--shadow-button);
+  font: 900 13px/1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.28s var(--ease-spring),
+    box-shadow 0.28s;
+}
+
+.boss:hover {
+  color: var(--color-ink);
+  box-shadow: var(--shadow-button-hover);
+}
+
+.boss:active {
+  box-shadow: var(--shadow-button-pressed);
+}
+
+/* Gloss highlight across the top 40% */
+.boss::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 4px;
+  height: 40%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(#ffffff8f, #ffffff00);
+  pointer-events: none;
+}
+
+/* Diagonal gloss sweep on hover (0.75s) */
+.boss::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -70%;
+  width: 45%;
+  background: linear-gradient(105deg, #fff0, #ffffffc7, #fff0);
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+
+.boss:hover::after {
+  left: 135%;
+  transition: left 0.75s ease;
+}
+
+/* Ink version for pink grounds */
+.ink {
+  background: var(--color-ink);
+  color: var(--color-white);
+  border-color: var(--color-ink);
+  box-shadow: 0 6px 0 var(--color-cta-shadow-on-pink);
+}
+
+.ink:hover {
+  color: var(--color-white);
+  box-shadow: 0 10px 0 var(--color-cta-shadow-on-pink);
+}
+
+/* Sizes the prototype sets inline */
+.sm {
+  min-height: 50px;
+  padding: 0 22px;
+  font-size: 11.5px;
+  box-shadow: 0 4px 0 var(--color-ink);
+}
+
+.lg {
+  min-height: 68px;
+  padding: 0 36px;
+  font-size: 14px;
+}
+
+.xl {
+  min-height: 70px;
+  padding: 0 38px;
+  font-size: 14.5px;
+}
+
+/* Quote flow: the button lifts rather than relying on the magnetic pull */
+.lift {
+  min-height: 60px;
+  transition:
+    transform 0.25s var(--ease-spring),
+    box-shadow 0.25s;
+}
+
+.lift::after {
+  display: none;
+}
+
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 0 var(--color-ink);
+}
+
+.lift:active {
+  transform: translateY(4px);
+  box-shadow: var(--shadow-button-pressed);
+}
+
+/* Disabled: real `disabled` or aria-disabled (kept focusable so it can explain why) */
+.boss:disabled,
+.boss[aria-disabled='true'] {
+  background: var(--color-disabled-fill);
+  color: var(--color-muted-grey);
+  border-color: var(--color-disabled-outline);
+  box-shadow: 0 6px 0 var(--color-disabled-outline);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.boss:disabled::before,
+.boss[aria-disabled='true']::before,
+.boss:disabled::after,
+.boss[aria-disabled='true']::after {
+  display: none;
+}
+
+/* ---------- Ghost button (.ghost) ---------- */
+
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 0 24px;
+  border-radius: var(--radius-pill);
+  border: var(--outline);
+  color: var(--color-ink);
+  background: var(--color-white);
+  font: 700 12px/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.25s,
+    color 0.25s;
+}
+
+.ghost:hover {
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+
+.ghostTall {
+  min-height: 62px;
+  padding: 0 26px;
+}
+
+.ghostFlow {
+  min-height: 60px;
+}
+
+.ghostPink {
+  border-color: var(--color-deep-pink);
+  color: var(--color-deep-pink);
+}
+
+.ghostPink:hover {
+  border-color: var(--color-ink);
+}
+
+.ghost:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.ghost:disabled:hover {
+  background: var(--color-white);
+  color: var(--color-ink);
+}
+
+/* ---------- Magnetic halo (.mag) ---------- */
+
+.mag {
+  position: relative;
+  display: inline-block;
+  padding: 16px;
+  margin: -16px;
+}
+
+.mag > .boss {
+  will-change: transform;
+}
+
+.mag .popSparkle {
+  opacity: 0;
+  animation: none;
+}
+
+.mag:hover .popSparkle {
+  animation: pop 0.7s var(--ease-pop) both;
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-40deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mag .popSparkle {
+    opacity: 0;
+  }
+}

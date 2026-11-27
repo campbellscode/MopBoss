@@ -1,0 +1,70 @@
+/* ---------- Eyebrow label (.eb) ---------- */
+
+.eyebrow {
+  font: 700 var(--fs-eyebrow) / 1 var(--font-display);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.toneDeepPink {
+  color: var(--color-deep-pink);
+}
+
+.toneInk {
+  color: var(--color-ink);
+}
+
+.toneOnInk {
+  color: var(--color-pink-on-ink);
+}
+
+.withRule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rule {
+  display: inline-block;
+  width: 34px;
+  height: 3px;
+  background: var(--color-boss-pink);
+}
+
+/* ---------- Accent phrase (.i inside a headline) ---------- */
+
+.accentPhrase {
+  font-size: calc(var(--accent-scale, 1.12) * 1em);
+}
+
+.block {
+  display: block;
+}
+
+.toneBoss {
+  color: var(--color-boss-pink);
+}
+
+.toneInkAccent {
+  color: var(--color-ink);
+}
+
+.toneOnInkAccent {
+  color: var(--color-pink-on-ink);
+}
+
+/* White display type with ink stroke and hard shadow, used in CTA bands */
+.outline {
+  display: block;
+  color: var(--color-white);
+  -webkit-text-stroke: 5px var(--color-ink);
+  paint-order: stroke fill;
+  text-shadow: 6px 6px 0 var(--color-ink);
+}
+
+@media (max-width: 767.98px) {
+  .outline {
+    -webkit-text-stroke-width: 4px;
+    text-shadow: 4px 4px 0 var(--color-ink);
+  }
+}
