@@ -3,5 +3,6 @@
     <Build />
     <Deploy />
   </Project>
+  <Project Path="MopBoss.Server.Tests/MopBoss.Server.Tests.csproj" />
   <Project Path="MopBoss.Server/MopBoss.Server.csproj" />
 </Solution>
