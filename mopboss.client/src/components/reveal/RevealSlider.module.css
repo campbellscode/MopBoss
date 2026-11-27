@@ -1,0 +1,232 @@
+/* ---------- Frame (.ba) ---------- */
+
+.frame {
+  position: relative;
+  aspect-ratio: 2.3 / 1;
+  min-height: 300px;
+  border-radius: var(--radius-reveal);
+  border: 3px solid var(--color-ink);
+  box-shadow: 0 10px 0 var(--color-ink);
+  overflow: hidden;
+  background: var(--color-white);
+}
+
+.gallery {
+  aspect-ratio: 2.1 / 1;
+}
+
+.frame:focus-within {
+  outline: 4px solid var(--color-deep-pink);
+  outline-offset: 5px;
+}
+
+.wide,
+.tall {
+  position: absolute;
+  inset: 0;
+}
+
+.tall {
+  display: none;
+}
+
+/* ---------- Scene layers ---------- */
+
+.side {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.before {
+  filter: saturate(0.3) sepia(0.4) brightness(0.8);
+}
+
+.after {
+  clip-path: inset(0 calc(100% - var(--p)) 0 0);
+}
+
+.tiles {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-scene-pink);
+  background-image:
+    linear-gradient(#ffffff 3px, #0000 3px), linear-gradient(90deg, #ffffff 3px, #0000 3px);
+}
+
+.mirror {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffffff 0 38%, #e6f3ff 38% 52%, #ffffff 52% 60%, #e6f3ff 60%);
+}
+
+.dirtGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(#4a3c28 3px, #0000 3px), linear-gradient(90deg, #4a3c28 3px, #0000 3px);
+  opacity: 0.55;
+}
+
+.dirtSpecks {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(#3d3222 2px, #0000 3px), radial-gradient(#3d3222 1.4px, #0000 2.4px);
+  background-position:
+    0 0,
+    21px 31px;
+  opacity: 0.5;
+}
+
+/* ---------- Tags, handle, range ---------- */
+
+.tag {
+  position: absolute;
+  top: 20px;
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
+  font: 900 11px/1 var(--font-display);
+  letter-spacing: 0.1em;
+  pointer-events: none;
+}
+
+.tagAfter {
+  left: 20px;
+  background: var(--color-boss-pink);
+  border: 2px solid var(--color-ink);
+}
+
+.tagBefore {
+  right: 20px;
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+
+.handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--p);
+  width: 5px;
+  margin-left: -2.5px;
+  background: var(--color-ink);
+  pointer-events: none;
+}
+
+.knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 76px;
+  height: 76px;
+  margin: -38px 0 0 -38px;
+  border-radius: 50%;
+  background: var(--color-boss-pink);
+  border: 3px solid var(--color-ink);
+  box-shadow: 0 5px 0 var(--color-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink);
+}
+
+.range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+/* A tall, knob-wide thumb so touch drags work from the handle on every browser */
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 76px;
+  height: 100vh;
+}
+
+.range::-moz-range-thumb {
+  width: 76px;
+  height: 100vh;
+  border: 0;
+}
+
+/* ---------- Gallery controls ---------- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.sweepRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.sweepButton {
+  min-height: 54px;
+  font-size: 12px;
+}
+
+.status {
+  font-size: 18px;
+}
+
+/* ---------- Mobile homepage composition ---------- */
+
+@media (max-width: 767.98px) {
+  .home {
+    aspect-ratio: 1 / 1.02;
+    min-height: 0;
+    border-radius: var(--radius-card-lg);
+    box-shadow: var(--shadow-card);
+    touch-action: pan-y;
+  }
+
+  .home .wide {
+    display: none;
+  }
+
+  .home .tall {
+    display: block;
+  }
+
+  .home .tag {
+    top: 14px;
+    padding: 9px 13px;
+    font-size: 10px;
+  }
+
+  .home .tagAfter {
+    left: 14px;
+  }
+
+  .home .tagBefore {
+    right: 14px;
+  }
+
+  .home .knob {
+    top: 62%;
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+    box-shadow: 0 4px 0 var(--color-ink);
+  }
+
+  .home .knob svg {
+    width: 30px;
+    height: 30px;
+  }
+}
