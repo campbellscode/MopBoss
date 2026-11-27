@@ -56,7 +56,8 @@ export const footer = {
     { href: '/about', label: 'About Linda' },
     { href: '/quote', label: 'Get a quote' },
   ],
-  copyrightHome: '© 2026 Mop Boss. All rights reserved.',
+  copyrightHome: '© 2026 Mop Boss.',
+  rightsReserved: 'All rights reserved.',
   copyright: '© 2026 Mop Boss. Linda Tucker · Expert Housekeeper.',
   /** Audit mode only. */
   prototypeNote: 'Phase 1 design prototype. Items in [brackets] await confirmation.',

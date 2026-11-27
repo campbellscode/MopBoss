@@ -1,0 +1,65 @@
+/* Mobile homepage thumb bar with the raised quote button. Phone widths only. */
+.bar {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 45;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 8px 8px 14px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    background: var(--color-white);
+    border-top: var(--rule);
+  }
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 56px;
+  color: var(--color-ink);
+  text-decoration: none;
+  font: 600 11px/1 var(--font-body);
+}
+
+.tab:hover {
+  color: var(--color-deep-pink);
+}
+
+.quote {
+  flex: none;
+  width: 96px;
+  height: 66px;
+  margin: -22px 4px 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-boss-pink);
+  border: var(--outline);
+  box-shadow: 0 5px 0 var(--color-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: var(--color-ink);
+  text-decoration: none;
+  font: 900 10.5px/1 var(--font-display);
+  letter-spacing: 0.06em;
+}
+
+.quote:hover {
+  color: var(--color-ink);
+}
+
+.quote:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--color-ink);
+}

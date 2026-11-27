@@ -1,0 +1,113 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fffffff2;
+  backdrop-filter: blur(10px);
+  border-bottom: var(--rule);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: var(--header-height);
+  flex-wrap: wrap;
+}
+
+.logoLink {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: block;
+  height: 66px;
+  width: auto;
+  mix-blend-mode: multiply;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.navLink {
+  color: var(--color-ink);
+  text-decoration: none;
+  font: 600 14px/1 var(--font-body);
+  padding: 14px 4px;
+  border-bottom: 2px solid #0000;
+}
+
+.navLink:hover,
+.navLink[aria-current] {
+  color: var(--color-deep-pink);
+  border-color: var(--color-boss-pink);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.phone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-ink);
+  text-decoration: none;
+  font: 700 15px/1 var(--font-body);
+}
+
+.phone svg {
+  color: var(--color-deep-pink);
+}
+
+/* Below 760px the desktop nav links and phone number hide */
+@media (max-width: 759.98px) {
+  .nav,
+  .phone {
+    display: none;
+  }
+}
+
+/* Mobile homepage composition: compact bar with a phone pill instead of the CTA */
+@media (max-width: 767.98px) {
+  .home {
+    background: #fffffff5;
+    backdrop-filter: none;
+  }
+
+  .home .inner {
+    min-height: var(--header-height-mobile);
+    gap: 12px;
+    padding: 0 16px;
+    flex-wrap: nowrap;
+  }
+
+  .home .logo {
+    height: 50px;
+  }
+
+  .home .phone {
+    display: flex;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+    border: 2px solid var(--color-ink);
+    font-size: 13.5px;
+  }
+
+  .home .phone svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .home .quoteCta {
+    display: none;
+  }
+}

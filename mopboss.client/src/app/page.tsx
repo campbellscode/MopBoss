@@ -1,7 +1,9 @@
-export default function Home() {
+import { PageShell } from '@/components/layout/PageShell';
+
+export default function HomePage() {
   return (
-    <main>
-      <h1>Mop Boss</h1>
-    </main>
+    <PageShell page="home">
+      <h1 className="visually-hidden">Mop Boss</h1>
+    </PageShell>
   );
 }
