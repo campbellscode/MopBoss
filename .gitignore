@@ -19,3 +19,23 @@ Thumbs.db
 
 # Local tool config
 .claude/
+
+# .NET local settings and test output (secrets belong in user secrets, never in files)
+appsettings.*.local.json
+appsettings.Local.json
+secrets.json
+TestResults/
+*.pfx
+*.p12
+
+# Databases, backups and exports: customer data must never enter Git
+*.bak
+*.bacpac
+*.dacpac
+*.mdf
+*.ldf
+*.sqlite
+*.db
+backups/
+exports/
+*.export.csv

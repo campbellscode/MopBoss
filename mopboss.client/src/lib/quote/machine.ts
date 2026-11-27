@@ -26,6 +26,22 @@ export type QuoteAnswers = {
 
 export type SubmitStatus = 'idle' | 'submitting' | 'error';
 
+/** Why a send did not complete. Every case keeps the visitor's answers. */
+export type SubmitFailure =
+  /** The server refused some details (should not happen: the form validates first). */
+  | 'invalid'
+  /** Too many requests from this connection; try again later. */
+  | 'rate-limited'
+  /** Network error, timeout or server error: the request may or may not be stored. Retrying is safe. */
+  | 'uncertain'
+  /** The idempotency key was already used for different details (a new key is drawn on retry). */
+  | 'conflict'
+  /** Production build without an API: online requests are unavailable. */
+  | 'unavailable';
+
+/** What actually happened, so the confirmation never claims more than is true. */
+export type SubmitResult = { mode: 'demo' } | { mode: 'live'; reference: string };
+
 export type QuoteState = {
   step: StepIndex;
   done: boolean;
@@ -35,6 +51,13 @@ export type QuoteState = {
   /** Contact fields the visitor has left at least once (to time error messages). */
   touched: Partial<Record<ContactField, boolean>>;
   answers: QuoteAnswers;
+  /**
+   * Sent with the request so retries cannot create duplicates. Drawn when the first send
+   * starts, reused for every retry of the same answers, discarded when an answer changes.
+   */
+  idempotencyKey: string | null;
+  failure: SubmitFailure | null;
+  result: SubmitResult | null;
 };
 
 export type ContactField = 'name' | 'phone' | 'email' | 'zip' | 'notes' | 'website';
@@ -47,6 +70,9 @@ export function initialState(): QuoteState {
     status: 'idle',
     attempted: false,
     touched: {},
+    idempotencyKey: null,
+    failure: null,
+    result: null,
     answers: {
       service: '',
       property: '',
@@ -69,11 +95,12 @@ export type QuoteAction =
   | { type: 'count'; field: 'beds' | 'baths'; delta: 1 | -1 }
   | { type: 'type'; field: ContactField; value: string }
   | { type: 'blur'; field: ContactField }
-  | { type: 'next' }
+  /** `newKey` is used only if a send starts and no key is held yet. */
+  | { type: 'next'; newKey?: string }
   | { type: 'back' }
   | { type: 'edit'; step: StepIndex }
-  | { type: 'submitted' }
-  | { type: 'failed' }
+  | { type: 'submitted'; result: SubmitResult }
+  | { type: 'failed'; failure: SubmitFailure }
   | { type: 'restart' };
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
@@ -127,19 +154,31 @@ export function firstIncompleteStep(a: QuoteAnswers): StepIndex | null {
 
 // ---------- Reducer ----------
 
+/** New answers mean a new request: drop the old key and any stale failure message. */
+function withAnswer(state: QuoteState, answers: QuoteAnswers): QuoteState {
+  const changed = (Object.keys(answers) as (keyof QuoteAnswers)[]).some(
+    (k) => answers[k] !== state.answers[k],
+  );
+  if (!changed) return state;
+  return { ...state, answers, idempotencyKey: null, failure: null, status: 'idle' };
+}
+
 export function quoteReducer(state: QuoteState, action: QuoteAction): QuoteState {
+  if (state.status === 'submitting' && action.type !== 'submitted' && action.type !== 'failed') {
+    return state; // nothing changes while a send is in flight (no double submits)
+  }
   switch (action.type) {
     case 'choose':
-      return { ...state, answers: { ...state.answers, [action.field]: action.value } };
+      return withAnswer(state, { ...state.answers, [action.field]: action.value });
 
     case 'count': {
       const limits = action.field === 'beds' ? quoteOptions.bedrooms : quoteOptions.bathrooms;
       const value = clamp(state.answers[action.field] + action.delta, limits.min, limits.max);
-      return { ...state, answers: { ...state.answers, [action.field]: value } };
+      return withAnswer(state, { ...state.answers, [action.field]: value });
     }
 
     case 'type':
-      return { ...state, answers: { ...state.answers, [action.field]: action.value } };
+      return withAnswer(state, { ...state.answers, [action.field]: action.value });
 
     case 'blur':
       return { ...state, touched: { ...state.touched, [action.field]: true } };
@@ -151,28 +190,38 @@ export function quoteReducer(state: QuoteState, action: QuoteAction): QuoteState
         // Review step: guard against a stale answer, then hand over to the adapter.
         const missing = firstIncompleteStep(state.answers);
         if (missing !== null) return { ...state, step: missing, attempted: true };
-        return { ...state, status: 'submitting' };
+        const idempotencyKey = state.idempotencyKey ?? action.newKey ?? null;
+        if (!idempotencyKey) return state; // the component always supplies one
+        return { ...state, status: 'submitting', failure: null, idempotencyKey };
       }
       return { ...state, step: (state.step + 1) as StepIndex, attempted: false };
     }
 
     case 'back':
-      if (state.status === 'submitting') return state;
       return {
         ...state,
         step: Math.max(0, state.step - 1) as StepIndex,
         attempted: false,
         status: 'idle',
+        failure: null,
       };
 
     case 'edit':
-      return { ...state, step: action.step, attempted: false, status: 'idle' };
+      return { ...state, step: action.step, attempted: false, status: 'idle', failure: null };
 
     case 'submitted':
-      return { ...state, done: true, status: 'idle' };
+      if (state.status !== 'submitting') return state;
+      return { ...state, done: true, status: 'idle', result: action.result, failure: null };
 
     case 'failed':
-      return { ...state, status: 'error' };
+      if (state.status !== 'submitting') return state;
+      return {
+        ...state,
+        status: 'error',
+        failure: action.failure,
+        // A conflicting key must not be reused; an uncertain send must reuse its key.
+        idempotencyKey: action.failure === 'conflict' ? null : state.idempotencyKey,
+      };
 
     case 'restart':
       return initialState();

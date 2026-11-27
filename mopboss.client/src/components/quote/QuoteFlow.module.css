@@ -1,4 +1,6 @@
 .page {
+  /* Each step slides in from 28px to the right; clip so phones never scroll sideways. */
+  overflow-x: clip;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -555,6 +557,33 @@
   font-weight: 700;
 }
 
+/* Never split the phone number at its hyphen */
+.doneBody a[href^='tel:'],
+.submitError a[href^='tel:'],
+.sheetCall a[href^='tel:'] {
+  white-space: nowrap;
+}
+
+.submitError:not(:empty) {
+  padding-bottom: 16px;
+}
+
+.reference {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  font: 600 14px/1.3 var(--font-body);
+  color: var(--color-body-grey);
+}
+
+.reference strong {
+  font: 900 clamp(22px, 2.6vw, 30px) / 1 var(--font-display);
+  letter-spacing: 0.04em;
+  color: var(--color-ink);
+}
+
 .stamp {
   padding: 12px 18px;
   border: 3px solid var(--color-deep-pink);
@@ -677,7 +706,6 @@
 
 .submitError {
   margin: 0 auto;
-  padding-bottom: 16px;
   font: 600 14px/1.5 var(--font-body);
   color: var(--color-deep-pink);
 }

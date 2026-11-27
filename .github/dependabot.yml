@@ -1,0 +1,26 @@
+# Weekly dependency update pull requests. Minor and patch updates are grouped so they
+# arrive as one PR per ecosystem; majors come separately for review.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /mopboss.client
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

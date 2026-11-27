@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using MopBoss.Server.Data;
 
 namespace MopBoss.Server.Quotes;
 
@@ -12,70 +11,61 @@ public static class RateLimits
     public static readonly TimeSpan QuoteWindow = TimeSpan.FromMinutes(10);
 }
 
+/// <summary>
+/// The only public write endpoint. There are deliberately no endpoints for reading
+/// requests or changing their status: those are operator tasks (see PRODUCTION_READINESS.md).
+/// </summary>
 [ApiController]
 [Route("api/quote")]
-public class QuotesController(
-    MopBossDbContext db,
-    IQuoteNotifier notifier,
-    TimeProvider clock,
-    ILogger<QuotesController> logger) : ControllerBase
+public class QuotesController(QuoteSubmissionService submissions, ILogger<QuotesController> logger)
+    : ControllerBase
 {
+    public const string IdempotencyHeader = "Idempotency-Key";
+
+    /// <summary>Largest accepted request body. A full request is well under 4 KB.</summary>
+    public const int MaxBodyBytes = 16 * 1024;
+
     public record QuoteAccepted(string Reference);
 
     /// <summary>
-    /// Stores a quote request, then emails Linda. The request is saved first, so a
-    /// mail outage never loses it; failures are recorded on the row for follow-up.
+    /// Stores a quote request and queues Linda's email. 202 means stored, not emailed:
+    /// delivery happens in the background with retries. Repeating a request with the same
+    /// Idempotency-Key is safe and returns the same reference.
     /// </summary>
     [HttpPost]
     [EnableRateLimiting(RateLimits.QuotePolicy)]
+    [RequestSizeLimit(MaxBodyBytes)]
     [ProducesResponseType<QuoteAccepted>(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<QuoteAccepted>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> Create(
-        [FromBody] QuoteRequestDto dto, CancellationToken cancellationToken)
+        [FromBody] QuoteRequestDto dto,
+        [FromHeader(Name = IdempotencyHeader)] string? idempotencyKey,
+        CancellationToken cancellationToken)
     {
+        if (!Guid.TryParse(idempotencyKey, out var key) || key == Guid.Empty)
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Missing Idempotency-Key",
+                detail: "Send a new UUID in the Idempotency-Key header for each request, and reuse it when retrying.");
+
         // Honeypot: look successful so bots learn nothing, but store and send nothing.
         if (dto.IsLikelyBot)
         {
             logger.LogInformation("Dropped a quote request that filled the honeypot field.");
-            return StatusCode(StatusCodes.Status202Accepted, new QuoteAccepted("received"));
+            return StatusCode(StatusCodes.Status202Accepted, new QuoteAccepted(QuoteReference.Create()));
         }
 
-        var request = new QuoteRequest
+        var result = await submissions.SubmitAsync(dto, key, cancellationToken);
+        return result.Outcome switch
         {
-            Id = Guid.NewGuid(),
-            ReceivedAt = clock.GetUtcNow(),
-            Service = dto.Service.Trim(),
-            Property = dto.Property.Trim(),
-            Bedrooms = dto.Bedrooms,
-            Bathrooms = dto.Bathrooms,
-            SquareFeet = dto.SquareFeet.Trim(),
-            Frequency = dto.Frequency.Trim(),
-            Name = dto.Contact.Name.Trim(),
-            Phone = Clean(dto.Contact.Phone),
-            Email = Clean(dto.Contact.Email),
-            Zip = Clean(dto.Contact.Zip),
-            Notes = Clean(dto.Notes),
+            SubmissionOutcome.Created => StatusCode(StatusCodes.Status202Accepted, new QuoteAccepted(result.Reference!)),
+            SubmissionOutcome.Replayed or SubmissionOutcome.Duplicate => Ok(new QuoteAccepted(result.Reference!)),
+            _ => Problem(
+                statusCode: StatusCodes.Status422UnprocessableEntity,
+                title: "Idempotency-Key reused",
+                detail: "This Idempotency-Key was already used for a different request."),
         };
-
-        db.QuoteRequests.Add(request);
-        await db.SaveChangesAsync(cancellationToken);
-
-        try
-        {
-            await notifier.NotifyAsync(request, cancellationToken);
-            request.NotifiedAt = clock.GetUtcNow();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Quote request {Id} was stored but the email to Linda failed.", request.Id);
-            request.NotificationError = ex.Message.Length > 1000 ? ex.Message[..1000] : ex.Message;
-        }
-        await db.SaveChangesAsync(CancellationToken.None);
-
-        return StatusCode(
-            StatusCodes.Status202Accepted, new QuoteAccepted(request.Id.ToString("N")[..8]));
     }
-
-    private static string? Clean(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

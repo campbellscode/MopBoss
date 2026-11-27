@@ -125,20 +125,69 @@ describe('edit from review', () => {
 });
 
 describe('submitting', () => {
-  it('enters "submitting" from a complete review step and finishes on success', () => {
-    const submitting = quoteReducer(run(completeToReview), { type: 'next' });
+  const send = (key = 'key-1'): QuoteAction => ({ type: 'next', newKey: key });
+
+  it('enters "submitting" with an idempotency key and ignores everything until it settles', () => {
+    const submitting = quoteReducer(run(completeToReview), send());
     expect(submitting.status).toBe('submitting');
-    expect(quoteReducer(submitting, { type: 'next' })).toBe(submitting);
+    expect(submitting.idempotencyKey).toBe('key-1');
+    // Double clicks, Back and edits are ignored while a send is in flight.
+    expect(quoteReducer(submitting, send('key-2'))).toBe(submitting);
     expect(quoteReducer(submitting, { type: 'back' })).toBe(submitting);
-    const done = quoteReducer(submitting, { type: 'submitted' });
+    expect(quoteReducer(submitting, { type: 'type', field: 'name', value: 'X' })).toBe(submitting);
+    const done = quoteReducer(submitting, {
+      type: 'submitted',
+      result: { mode: 'live', reference: 'MB-7K3Q9X' },
+    });
     expect(done.done).toBe(true);
+    expect(done.result).toEqual({ mode: 'live', reference: 'MB-7K3Q9X' });
   });
 
-  it('keeps the answers on failure so the visitor can retry', () => {
-    const failed = run([{ type: 'next' }, { type: 'failed' }], run(completeToReview));
+  it('keeps the answers and reuses the same key when retrying an uncertain send', () => {
+    const failed = run(
+      [send('key-1'), { type: 'failed', failure: 'uncertain' }],
+      run(completeToReview),
+    );
     expect(failed.status).toBe('error');
+    expect(failed.failure).toBe('uncertain');
     expect(failed.step).toBe(5);
     expect(failed.answers.name).toBe('Dana Smith');
+
+    const retry = quoteReducer(failed, send('key-2'));
+    expect(retry.idempotencyKey).toBe('key-1'); // same request, same key
+    expect(retry.failure).toBeNull();
+  });
+
+  it('draws a new key once an answer changes, so edited details are a new request', () => {
+    const failed = run(
+      [send('key-1'), { type: 'failed', failure: 'uncertain' }],
+      run(completeToReview),
+    );
+    const edited = run(
+      [
+        { type: 'edit', step: 4 },
+        { type: 'type', field: 'name', value: 'Dana Smythe' },
+      ],
+      failed,
+    );
+    expect(edited.idempotencyKey).toBeNull();
+    const unchanged = quoteReducer(failed, { type: 'type', field: 'name', value: 'Dana Smith' });
+    expect(unchanged.idempotencyKey).toBe('key-1'); // retyping the same value keeps it
+  });
+
+  it('drops a key the server says belongs to different details', () => {
+    const conflict = run(
+      [send('key-1'), { type: 'failed', failure: 'conflict' }],
+      run(completeToReview),
+    );
+    expect(conflict.idempotencyKey).toBeNull();
+    expect(quoteReducer(conflict, send('key-2')).idempotencyKey).toBe('key-2');
+  });
+
+  it('ignores stray results when nothing is being sent', () => {
+    const s = run(completeToReview);
+    expect(quoteReducer(s, { type: 'submitted', result: { mode: 'demo' } })).toBe(s);
+    expect(quoteReducer(s, { type: 'failed', failure: 'uncertain' })).toBe(s);
   });
 
   it('starts over from a clean slate', () => {

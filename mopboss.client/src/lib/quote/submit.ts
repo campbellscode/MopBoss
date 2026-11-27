@@ -1,13 +1,16 @@
-import type { QuoteAnswers } from './machine';
+import { deployment, type Deployment } from '@/lib/deployment';
+import type { QuoteAnswers, SubmitFailure, SubmitResult } from './machine';
 
 /**
  * The single seam between the quote form and wherever requests end up.
  *
- * Requests go to MopBoss.Server (POST /api/quote), which stores them in SQL Server
- * and emails Linda. The API is used only when NEXT_PUBLIC_QUOTE_API_URL is set at
- * build time (for example https://api.yourdomain). Without it, the mock below is
- * used: it sends nothing, and the confirmation screen says
- * "Demo only · nothing was sent". Never deploy publicly without the API URL.
+ * - live: a valid NEXT_PUBLIC_QUOTE_API_URL. Requests go to MopBoss.Server, which
+ *   stores them and queues Linda's email.
+ * - demo: only with an explicit NEXT_PUBLIC_QUOTE_MODE=demo outside production.
+ *   Nothing is sent, and the confirmation says so.
+ * - unavailable: anything else (missing, invalid or unsafe settings). The build guard
+ *   in next.config.ts normally stops such a build; if one slips through, the form tells
+ *   visitors to phone Linda instead of pretending to send.
  */
 
 export type QuoteRequestPayload = {
@@ -24,15 +27,24 @@ export type QuoteRequestPayload = {
     zip?: string;
   };
   notes?: string;
-  /** Honeypot value. A real backend should silently drop requests where it is non-empty. */
+  /** Honeypot value. The API silently drops requests where it is non-empty. */
   website: string;
-  /** ISO timestamp of when the visitor pressed send. */
+  /** ISO timestamp of when the visitor pressed send (informational). */
   submittedAt: string;
 };
 
-export type SubmitResult = { ok: true; reference?: string } | { ok: false; error: string };
+export type SubmitOutcome =
+  { ok: true; result: SubmitResult } | { ok: false; failure: SubmitFailure };
 
-export type QuoteAdapter = (payload: QuoteRequestPayload) => Promise<SubmitResult>;
+export type QuoteAdapter = (
+  payload: QuoteRequestPayload,
+  idempotencyKey: string,
+) => Promise<SubmitOutcome>;
+
+/** How long to wait for the API before treating the outcome as uncertain. */
+export const SUBMIT_TIMEOUT_MS = 15_000;
+
+const REFERENCE = /^MB-[0-9A-Z]{6,9}$/;
 
 const optional = (v: string) => (v.trim() ? v.trim() : undefined);
 
@@ -56,50 +68,89 @@ export function toPayload(a: QuoteAnswers, now: Date = new Date()): QuoteRequest
   };
 }
 
-/** Local stand-in: waits briefly so the sending state is visible, then succeeds. Sends nothing. */
-export const mockAdapter: QuoteAdapter = async () => {
+/** Demo stand-in: waits briefly so the sending state is visible, then reports demo. Sends nothing. */
+export const demoAdapter: QuoteAdapter = async () => {
   await new Promise((resolve) => setTimeout(resolve, 600));
-  return { ok: true, reference: 'demo' };
+  return { ok: true, result: { mode: 'demo' } };
 };
 
-/** Posts the payload to MopBoss.Server. 202 means stored (and, if SMTP is set, emailed). */
-export const httpAdapter =
-  (baseUrl: string): QuoteAdapter =>
-  async (payload) => {
-    const response = await fetch(`${baseUrl}/api/quote`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (response.ok) {
-      const data = (await response.json().catch(() => ({}))) as { reference?: string };
-      return { ok: true, reference: data.reference };
-    }
-    return {
-      ok: false,
-      error: response.status === 429 ? 'rate-limited' : `http-${response.status}`,
-    };
-  };
-
-const apiUrl = process.env.NEXT_PUBLIC_QUOTE_API_URL?.trim().replace(/\/$/, '') || null;
-
-/** True while the mock is wired in; drives the "nothing was sent" notice. */
-export const isMockSubmission = apiUrl === null;
-
-const activeAdapter: QuoteAdapter = apiUrl ? httpAdapter(apiUrl) : mockAdapter;
+/** Production build with no API configured: never pretend. */
+export const unavailableAdapter: QuoteAdapter = async () => ({ ok: false, failure: 'unavailable' });
 
 /**
- * Submit a quote request. Bot submissions caught by the honeypot are reported as
- * successful (so bots learn nothing) but never forwarded.
+ * Posts to MopBoss.Server. 202 (stored) and 200 (a replay of the same request) both
+ * carry the reference. Anything that leaves the outcome unknown (network error,
+ * timeout, 5xx, a malformed reply) is "uncertain": retrying with the same key is safe.
+ * The timeout covers the whole exchange, including reading the reply body.
+ */
+export const httpAdapter =
+  (baseUrl: string, timeoutMs = SUBMIT_TIMEOUT_MS): QuoteAdapter =>
+  async (payload, idempotencyKey) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    // Rejects when the deadline passes, so a reply whose body stalls cannot hang the form.
+    const deadline = new Promise<never>((_, reject) =>
+      controller.signal.addEventListener('abort', () => reject(new Error('timeout')), {
+        once: true,
+      }),
+    );
+    deadline.catch(() => {}); // raced below; never an unhandled rejection
+    try {
+      let response: Response;
+      try {
+        response = await Promise.race([
+          fetch(`${baseUrl}/api/quote`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+            credentials: 'omit',
+          }),
+          deadline,
+        ]);
+      } catch {
+        return { ok: false, failure: 'uncertain' };
+      }
+
+      if (response.status === 200 || response.status === 202) {
+        const data = (await Promise.race([response.json(), deadline]).catch(() => null)) as {
+          reference?: unknown;
+        } | null;
+        return typeof data?.reference === 'string' && REFERENCE.test(data.reference)
+          ? { ok: true, result: { mode: 'live', reference: data.reference } }
+          : { ok: false, failure: 'uncertain' };
+      }
+      if (response.status === 429) return { ok: false, failure: 'rate-limited' };
+      if (response.status === 422) return { ok: false, failure: 'conflict' };
+      if (response.status >= 500) return { ok: false, failure: 'uncertain' };
+      return { ok: false, failure: 'invalid' };
+    } finally {
+      clearTimeout(timer);
+      controller.abort(); // release any body left unread
+    }
+  };
+
+/** True while requests go nowhere; drives the demo wording on the confirmation. */
+export const isDemoSubmission = deployment.mode === 'demo';
+
+/** The adapter for a resolved deployment: live, demo, or an honest "unavailable". */
+export function adapterFor(resolved: Deployment = deployment): QuoteAdapter {
+  if (resolved.mode === 'live' && resolved.quoteApiUrl) return httpAdapter(resolved.quoteApiUrl);
+  return resolved.mode === 'demo' ? demoAdapter : unavailableAdapter;
+}
+
+/**
+ * Submit a quote request. The honeypot value travels with the payload; the API drops
+ * bot submissions while answering like a success. Adapter exceptions become "uncertain".
  */
 export async function submitQuoteRequest(
   payload: QuoteRequestPayload,
-  adapter: QuoteAdapter = activeAdapter,
-): Promise<SubmitResult> {
-  if (payload.website.trim() !== '') return { ok: true };
+  idempotencyKey: string,
+  adapter: QuoteAdapter = adapterFor(),
+): Promise<SubmitOutcome> {
   try {
-    return await adapter(payload);
+    return await adapter(payload, idempotencyKey);
   } catch {
-    return { ok: false, error: 'network' };
+    return { ok: false, failure: 'uncertain' };
   }
 }

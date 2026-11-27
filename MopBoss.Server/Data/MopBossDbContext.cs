@@ -5,13 +5,27 @@ namespace MopBoss.Server.Data;
 public class MopBossDbContext(DbContextOptions<MopBossDbContext> options) : DbContext(options)
 {
     public DbSet<QuoteRequest> QuoteRequests => Set<QuoteRequest>();
+    public DbSet<NotificationOutbox> NotificationOutbox => Set<NotificationOutbox>();
+    public DbSet<IdempotencyKey> IdempotencyKeys => Set<IdempotencyKey>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<QuoteRequest>(e =>
         {
-            e.ToTable("QuoteRequests");
+            e.ToTable("QuoteRequests", t =>
+            {
+                t.HasCheckConstraint("CK_QuoteRequests_Status",
+                    "[Status] IN ('New','Contacted','Quoted','Scheduled','Completed','Cancelled')");
+                t.HasCheckConstraint("CK_QuoteRequests_Bedrooms", "[Bedrooms] BETWEEN 0 AND 9");
+                t.HasCheckConstraint("CK_QuoteRequests_Bathrooms", "[Bathrooms] BETWEEN 1 AND 9");
+                t.HasCheckConstraint("CK_QuoteRequests_ContactRoute", "[Phone] IS NOT NULL OR [Email] IS NOT NULL");
+            });
             e.HasKey(q => q.Id);
+            e.Property(q => q.Reference).HasMaxLength(QuoteLimits.Reference).IsUnicode(false);
+            e.HasIndex(q => q.Reference).IsUnique();
+            e.Property(q => q.Status).HasConversion<string>().HasMaxLength(20).IsUnicode(false);
+            e.Property(q => q.PayloadHash).HasMaxLength(64).IsUnicode(false).IsFixedLength();
+            e.HasIndex(q => new { q.PayloadHash, q.CreatedAtUtc });
             e.Property(q => q.Service).HasMaxLength(QuoteLimits.Choice);
             e.Property(q => q.Property).HasMaxLength(QuoteLimits.Choice);
             e.Property(q => q.SquareFeet).HasMaxLength(QuoteLimits.Choice);
@@ -21,8 +35,42 @@ public class MopBossDbContext(DbContextOptions<MopBossDbContext> options) : DbCo
             e.Property(q => q.Email).HasMaxLength(QuoteLimits.Email);
             e.Property(q => q.Zip).HasMaxLength(QuoteLimits.Zip);
             e.Property(q => q.Notes).HasMaxLength(QuoteLimits.Notes);
-            e.Property(q => q.NotificationError).HasMaxLength(1000);
-            e.HasIndex(q => q.ReceivedAt);
+            e.HasIndex(q => q.CreatedAtUtc);
+            e.HasIndex(q => new { q.Status, q.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<IdempotencyKey>(e =>
+        {
+            e.ToTable("IdempotencyKeys");
+            e.HasKey(k => k.Key);
+            e.Property(k => k.PayloadHash).HasMaxLength(64).IsUnicode(false).IsFixedLength();
+            e.HasOne(k => k.QuoteRequest).WithMany(q => q.IdempotencyKeys)
+                .HasForeignKey(k => k.QuoteRequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(k => k.QuoteRequestId);
+        });
+
+        modelBuilder.Entity<NotificationOutbox>(e =>
+        {
+            e.ToTable("NotificationOutbox", t =>
+            {
+                t.HasCheckConstraint("CK_NotificationOutbox_Status",
+                    "[Status] IN ('Pending','Sent','Failed','HandledManually','Suppressed')");
+                t.HasCheckConstraint("CK_NotificationOutbox_Attempts", "[Attempts] >= 0");
+            });
+            e.HasKey(n => n.Id);
+            e.Property(n => n.Kind).HasMaxLength(40).IsUnicode(false);
+            e.Property(n => n.Status).HasConversion<string>().HasMaxLength(20).IsUnicode(false);
+            e.Property(n => n.LastError).HasMaxLength(200);
+            e.Property(n => n.ConcurrencyStamp).IsConcurrencyToken();
+            e.Ignore(n => n.MessageId);
+            e.HasOne(n => n.QuoteRequest).WithOne(q => q.Notification)
+                .HasForeignKey<NotificationOutbox>(n => n.QuoteRequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // One-to-one: the unique index on QuoteRequestId means a request can never have
+            // two queued notifications, which guards against duplicate sends being queued.
+            // The worker's query: due Pending rows.
+            e.HasIndex(n => new { n.Status, n.NextAttemptAtUtc });
         });
     }
 }
@@ -30,6 +78,7 @@ public class MopBossDbContext(DbContextOptions<MopBossDbContext> options) : DbCo
 /// <summary>Column and input length limits, shared by validation and the schema.</summary>
 public static class QuoteLimits
 {
+    public const int Reference = 12;
     public const int Choice = 100;
     public const int Name = 120;
     public const int Phone = 40;

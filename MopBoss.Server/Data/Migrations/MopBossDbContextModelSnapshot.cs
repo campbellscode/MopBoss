@@ -22,6 +22,97 @@ namespace MopBoss.Server.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("MopBoss.Server.Data.IdempotencyKey", b =>
+                {
+                    b.Property<Guid>("Key")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("QuoteRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Key");
+
+                    b.HasIndex("QuoteRequestId");
+
+                    b.ToTable("IdempotencyKeys", (string)null);
+                });
+
+            modelBuilder.Entity("MopBoss.Server.Data.NotificationOutbox", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("LockToken")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("LockedUntilUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("NextAttemptAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("QuoteRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("SentAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuoteRequestId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "NextAttemptAtUtc");
+
+                    b.ToTable("NotificationOutbox", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_NotificationOutbox_Attempts", "[Attempts] >= 0");
+
+                            t.HasCheckConstraint("CK_NotificationOutbox_Status", "[Status] IN ('Pending','Sent','Failed','HandledManually','Suppressed')");
+                        });
+                });
+
             modelBuilder.Entity("MopBoss.Server.Data.QuoteRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -33,6 +124,9 @@ namespace MopBoss.Server.Data.Migrations
 
                     b.Property<int>("Bedrooms")
                         .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Email")
                         .HasMaxLength(254)
@@ -52,12 +146,12 @@ namespace MopBoss.Server.Data.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<string>("NotificationError")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTimeOffset?>("NotifiedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
 
                     b.Property<string>("Phone")
                         .HasMaxLength(40)
@@ -68,8 +162,11 @@ namespace MopBoss.Server.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTimeOffset>("ReceivedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(12)");
 
                     b.Property<string>("Service")
                         .IsRequired()
@@ -81,15 +178,69 @@ namespace MopBoss.Server.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("Zip")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ReceivedAt");
+                    b.HasIndex("CreatedAtUtc");
 
-                    b.ToTable("QuoteRequests", (string)null);
+                    b.HasIndex("Reference")
+                        .IsUnique();
+
+                    b.HasIndex("PayloadHash", "CreatedAtUtc");
+
+                    b.HasIndex("Status", "CreatedAtUtc");
+
+                    b.ToTable("QuoteRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_QuoteRequests_Bathrooms", "[Bathrooms] BETWEEN 1 AND 9");
+
+                            t.HasCheckConstraint("CK_QuoteRequests_Bedrooms", "[Bedrooms] BETWEEN 0 AND 9");
+
+                            t.HasCheckConstraint("CK_QuoteRequests_ContactRoute", "[Phone] IS NOT NULL OR [Email] IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_QuoteRequests_Status", "[Status] IN ('New','Contacted','Quoted','Scheduled','Completed','Cancelled')");
+                        });
+                });
+
+            modelBuilder.Entity("MopBoss.Server.Data.IdempotencyKey", b =>
+                {
+                    b.HasOne("MopBoss.Server.Data.QuoteRequest", "QuoteRequest")
+                        .WithMany("IdempotencyKeys")
+                        .HasForeignKey("QuoteRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("QuoteRequest");
+                });
+
+            modelBuilder.Entity("MopBoss.Server.Data.NotificationOutbox", b =>
+                {
+                    b.HasOne("MopBoss.Server.Data.QuoteRequest", "QuoteRequest")
+                        .WithOne("Notification")
+                        .HasForeignKey("MopBoss.Server.Data.NotificationOutbox", "QuoteRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("QuoteRequest");
+                });
+
+            modelBuilder.Entity("MopBoss.Server.Data.QuoteRequest", b =>
+                {
+                    b.Navigation("IdempotencyKeys");
+
+                    b.Navigation("Notification");
                 });
 #pragma warning restore 612, 618
         }

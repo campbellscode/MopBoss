@@ -1,6 +1,13 @@
+using System.Net;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using MopBoss.Server.Configuration;
 using MopBoss.Server.Data;
+using MopBoss.Server.Health;
+using MopBoss.Server.Notifications;
 using MopBoss.Server.Quotes;
 
 namespace MopBoss.Server
@@ -9,40 +16,101 @@ namespace MopBoss.Server
     {
         public const string SiteCorsPolicy = "site";
 
+        /// <summary>Largest request body the API accepts on any endpoint.</summary>
+        public const long MaxRequestBodyBytes = 64 * 1024;
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            var env = builder.Environment.EnvironmentName;
+            var config = builder.Configuration;
 
-            builder.Services.AddControllers();
+            // ---------- Configuration checks: refuse to start rather than misbehave ----------
+            var smtp = config.GetSection(SmtpOptions.Section).Get<SmtpOptions>() ?? new SmtpOptions();
+            var notifications = config.GetSection(NotificationOptions.Section).Get<NotificationOptions>() ?? new NotificationOptions();
+            var proxy = config.GetSection(ReverseProxyOptions.Section).Get<ReverseProxyOptions>() ?? new ReverseProxyOptions();
+            var origins = config.GetSection("Site:AllowedOrigins").Get<string[]>() ?? [];
+            var connectionString = config.GetConnectionString(StartupValidation.ConnectionStringName);
+
+            var otherConnectionNames = config.GetSection("ConnectionStrings").GetChildren().Select(c => c.Key);
+            var (dbTarget, errors) = StartupValidation.ValidateDatabase(env, connectionString, otherConnectionNames);
+            errors.AddRange(StartupValidation.ValidateSmtp(env, smtp));
+            errors.AddRange(StartupValidation.ValidateNotifications(env, notifications, smtp));
+            errors.AddRange(StartupValidation.ValidateReverseProxy(proxy));
+            errors.AddRange(StartupValidation.ValidateSiteOrigins(env, origins));
+            if (errors.Count > 0)
+                throw new InvalidOperationException(
+                    "MopBoss.Server configuration is invalid:" + Environment.NewLine + " - " +
+                    string.Join(Environment.NewLine + " - ", errors));
+
+            // ---------- Services ----------
+            builder.WebHost.ConfigureKestrel(k =>
+            {
+                k.Limits.MaxRequestBodySize = MaxRequestBodyBytes;
+                k.AddServerHeader = false;
+            });
+
+            builder.Services.AddControllers().AddJsonOptions(o =>
+                o.JsonSerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow);
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
             builder.Services.AddProblemDetails();
+            // Kestrel reports client errors (e.g. a body over the size limit) as
+            // BadHttpRequestException. Keep their status (413, 400...) instead of turning
+            // them into 500s; everything else stays a 500 without details.
+            builder.Services.Configure<ExceptionHandlerOptions>(o => o.StatusCodeSelector = ex =>
+                ex is BadHttpRequestException bad ? bad.StatusCode : StatusCodes.Status500InternalServerError);
             builder.Services.AddSingleton(TimeProvider.System);
 
-            // Quote requests are stored in SQL Server. Migrations are applied manually.
+            // Quote requests live in SQL Server. Migrations are applied manually, never at startup.
             builder.Services.AddDbContext<MopBossDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("MopBoss")));
+                options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(3)));
+            builder.Services.AddScoped<QuoteSubmissionService>();
 
-            // Email Linda over SMTP when configured; otherwise only log (local development).
-            var smtpSection = builder.Configuration.GetSection(SmtpOptions.Section);
-            builder.Services.Configure<SmtpOptions>(smtpSection);
-            if (smtpSection.Get<SmtpOptions>()?.IsConfigured == true)
+            // Notifications: queued in the outbox with each request, delivered in the background.
+            builder.Services.Configure<SmtpOptions>(config.GetSection(SmtpOptions.Section));
+            builder.Services.Configure<NotificationOptions>(config.GetSection(NotificationOptions.Section));
+            if (smtp.IsConfigured)
                 builder.Services.AddScoped<IQuoteNotifier, SmtpQuoteNotifier>();
             else
-                builder.Services.AddScoped<IQuoteNotifier, LoggingQuoteNotifier>();
+                builder.Services.AddScoped<IQuoteNotifier, LoggingQuoteNotifier>(); // never in Production (validated)
+            builder.Services.AddScoped<NotificationDispatcher>();
+            if (notifications.WorkerEnabled)
+                builder.Services.AddHostedService<NotificationWorker>();
 
-            // Only the website may call the API from a browser.
-            var allowedOrigins = builder.Configuration.GetSection("Site:AllowedOrigins").Get<string[]>() ?? [];
+            builder.Services.AddHealthChecks()
+                .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"])
+                .AddCheck<SchemaHealthCheck>("schema", tags: ["ready"])
+                .AddCheck<NotificationBacklogHealthCheck>("notifications", tags: ["ready"]);
+
+            // Browsers may call the API only from the website. CORS is not access control:
+            // anyone can still POST directly, which is what the rate limit and validation are for.
             builder.Services.AddCors(options => options.AddPolicy(SiteCorsPolicy, policy => policy
-                .WithOrigins(allowedOrigins)
+                .WithOrigins(origins)
                 .WithMethods("POST")
-                .WithHeaders("Content-Type")));
+                .WithHeaders("Content-Type", QuotesController.IdempotencyHeader)));
 
-            // Per-IP limit on quote submissions. Behind a reverse proxy, configure
-            // forwarded headers so RemoteIpAddress is the visitor, not the proxy.
+            // Forwarded headers are honoured only from proxies listed in configuration, so a
+            // visitor cannot fake their IP to dodge the rate limit.
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.ForwardLimit = 1;
+                options.KnownProxies.Clear();
+                options.KnownIPNetworks.Clear();
+                foreach (var ip in proxy.KnownProxies) options.KnownProxies.Add(IPAddress.Parse(ip));
+                foreach (var net in proxy.KnownNetworks) options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(net));
+            });
+
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.OnRejected = (context, _) =>
+                {
+                    context.HttpContext.Response.Headers.RetryAfter =
+                        ((int)RateLimits.QuoteWindow.TotalSeconds).ToString();
+                    return ValueTask.CompletedTask;
+                };
                 options.AddPolicy(RateLimits.QuotePolicy, context =>
                     RateLimitPartition.GetFixedWindowLimiter(
                         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -54,7 +122,38 @@ namespace MopBoss.Server
                         }));
             });
 
+            if (builder.Environment.IsProduction())
+                builder.Services.AddHsts(o => { o.MaxAge = TimeSpan.FromDays(365); o.IncludeSubDomains = true; });
+
+            // ---------- Pipeline ----------
             var app = builder.Build();
+
+            app.Logger.LogInformation(
+                "Environment {Environment} uses database {Database}. Email: {Email}. Forwarded headers: {Proxy}.",
+                dbTarget!.Environment, dbTarget.Database,
+                smtp.IsConfigured ? "SMTP" : "not configured (logged only)",
+                proxy.IsConfigured ? "trusted from configured proxies" : "ignored");
+            if (app.Environment.IsProduction() && !proxy.IsConfigured)
+                app.Logger.LogWarning(
+                    "No trusted reverse proxy is configured. If the API runs behind a proxy, every visitor " +
+                    "shares one rate-limit bucket; set ReverseProxy:KnownProxies or KnownNetworks.");
+
+            if (proxy.IsConfigured) app.UseForwardedHeaders();
+
+            app.UseExceptionHandler(); // ProblemDetails, no stack traces
+            app.UseStatusCodePages();
+            if (app.Environment.IsProduction()) app.UseHsts();
+
+            app.Use(async (context, next) =>
+            {
+                var headers = context.Response.Headers;
+                headers.XContentTypeOptions = "nosniff";
+                headers["Referrer-Policy"] = "no-referrer";
+                headers.XFrameOptions = "DENY";
+                headers.ContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'";
+                headers.CacheControl = "no-store";
+                await next();
+            });
 
             if (app.Environment.IsDevelopment())
             {
@@ -69,6 +168,11 @@ namespace MopBoss.Server
             app.UseAuthorization();
 
             app.MapControllers();
+
+            // Liveness: the process answers. Readiness: database reachable and email not stuck.
+            // Both return only Healthy / Degraded / Unhealthy, never details.
+            app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
+            app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = c => c.Tags.Contains("ready") });
 
             app.Run();
         }
