@@ -83,8 +83,18 @@ public class StartupValidationTests
     public void The_outbox_lease_must_outlast_a_slow_send()
     {
         var errors = StartupValidation.ValidateNotifications(
-            new NotificationOptions { LeaseSeconds = 50 }, new SmtpOptions { TimeoutSeconds = 30 });
+            "Development", new NotificationOptions { LeaseSeconds = 50 }, new SmtpOptions { TimeoutSeconds = 30 });
         Assert.Contains(errors, e => e.Contains("LeaseSeconds"));
+    }
+
+    [Fact]
+    public void Production_cannot_switch_the_notification_worker_off()
+    {
+        var off = new NotificationOptions { WorkerEnabled = false };
+        Assert.Contains(StartupValidation.ValidateNotifications("Production", off, new SmtpOptions()),
+            e => e.Contains("WorkerEnabled"));
+        Assert.DoesNotContain(StartupValidation.ValidateNotifications("Development", off, new SmtpOptions()),
+            e => e.Contains("WorkerEnabled"));
     }
 
     [Fact]

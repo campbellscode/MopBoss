@@ -10,7 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using MopBoss.Server.Configuration;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MopBoss.Server.Data;
+using MopBoss.Server.Health;
 using MopBoss.Server.Notifications;
 using MopBoss.Server.Quotes;
 using MopBoss.Server.Tests.Support;
@@ -209,6 +211,32 @@ VALUES (NEWID(), '2026-11-01T10:00:00+00:00', 'Deep Cleaning', 'House', 2, 1, 'N
         Assert.Equal(NotificationStatus.Pending, (await check.NotificationOutbox.SingleAsync(n => n.Id == failedA)).Status);
         Assert.Equal(NotificationStatus.Pending, (await check.NotificationOutbox.SingleAsync(n => n.Id == failedB)).Status);
         Assert.Equal(NotificationStatus.HandledManually, (await check.NotificationOutbox.SingleAsync(n => n.Id == handled)).Status);
+    }
+
+    [Fact]
+    public async Task Readiness_requires_exactly_the_expected_migrations()
+    {
+        static async Task<HealthStatus> Check(string connectionString)
+        {
+            await using var db = SqlServerFixture.Context(connectionString);
+            return (await new SchemaHealthCheck(db).CheckHealthAsync(new HealthCheckContext(), CancellationToken.None)).Status;
+        }
+
+        var empty = await sql.NewEmptyDatabaseAsync();
+        Assert.Equal(HealthStatus.Unhealthy, await Check(empty)); // never migrated
+
+        var behind = sql.NewDatabase();
+        await using (var db = SqlServerFixture.Context(behind))
+            await db.Database.GetService<IMigrator>().MigrateAsync("20261127155840_QuoteLifecycleAndNotificationOutbox");
+        Assert.Equal(HealthStatus.Unhealthy, await Check(behind)); // pending migrations
+
+        var current = await sql.NewMigratedDatabaseAsync();
+        Assert.Equal(HealthStatus.Healthy, await Check(current));
+
+        await using (var db = SqlServerFixture.Context(current))
+            await db.Database.ExecuteSqlRawAsync(
+                "INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('29991231000000_FromANewerBuild', '10.0.0')");
+        Assert.Equal(HealthStatus.Unhealthy, await Check(current)); // database ahead of this build
     }
 
     [Fact]

@@ -119,9 +119,13 @@ public static class StartupValidation
         return errors;
     }
 
-    public static List<string> ValidateNotifications(NotificationOptions n, SmtpOptions smtp)
+    public static List<string> ValidateNotifications(string environment, NotificationOptions n, SmtpOptions smtp)
     {
         var errors = new List<string>();
+        // There is no separate worker process: switching it off in Production would leave
+        // every request unemailed.
+        if (environment == "Production" && !n.WorkerEnabled)
+            errors.Add("Notifications:WorkerEnabled must be true in Production (no independent worker exists).");
         if (n.MaxAttempts is < 1 or > 50) errors.Add("Notifications:MaxAttempts must be between 1 and 50.");
         if (n.FailureReminderMinutes is < 5 or > 1440) errors.Add("Notifications:FailureReminderMinutes must be between 5 and 1440.");
         if (n.BatchSize is < 1 or > 100) errors.Add("Notifications:BatchSize must be between 1 and 100.");

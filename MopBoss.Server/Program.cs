@@ -34,7 +34,7 @@ namespace MopBoss.Server
 
             var (dbTarget, errors) = StartupValidation.ValidateDatabase(env, connectionString);
             errors.AddRange(StartupValidation.ValidateSmtp(env, smtp));
-            errors.AddRange(StartupValidation.ValidateNotifications(notifications, smtp));
+            errors.AddRange(StartupValidation.ValidateNotifications(env, notifications, smtp));
             errors.AddRange(StartupValidation.ValidateReverseProxy(proxy));
             errors.AddRange(StartupValidation.ValidateSiteOrigins(env, origins));
             if (errors.Count > 0)
@@ -74,6 +74,7 @@ namespace MopBoss.Server
 
             builder.Services.AddHealthChecks()
                 .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"])
+                .AddCheck<SchemaHealthCheck>("schema", tags: ["ready"])
                 .AddCheck<NotificationBacklogHealthCheck>("notifications", tags: ["ready"]);
 
             // Browsers may call the API only from the website. CORS is not access control:
