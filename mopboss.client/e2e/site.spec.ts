@@ -6,13 +6,16 @@ const WIDTHS = [320, 375, 390, 768, 1024, 1440, 1920];
 /** Collects console errors (CSP violations show up here) and uncaught exceptions. */
 function watchErrors(page: Page) {
   const errors: string[] = [];
+  // WebKit reports a same-origin Next.js prefetch (?_rsc=) cancelled by navigation as an
+  // "access control" error, both as a console message and as an unhandled rejection.
+  // It is not a CSP or CORS failure. Everything else counts.
+  const prefetchAborted = /\?_rsc=.*due to access control checks/;
   page.on('console', (msg) => {
-    // WebKit reports a same-origin Next.js prefetch (?_rsc=) cancelled by navigation as an
-    // "access control" error. It is not a CSP or CORS failure; everything else counts.
-    if (msg.type() === 'error' && !/\?_rsc=.*due to access control checks/.test(msg.text()))
-      errors.push(msg.text());
+    if (msg.type() === 'error' && !prefetchAborted.test(msg.text())) errors.push(msg.text());
   });
-  page.on('pageerror', (err) => errors.push(err.message));
+  page.on('pageerror', (err) => {
+    if (!prefetchAborted.test(err.message)) errors.push(err.message);
+  });
   return errors;
 }
 
