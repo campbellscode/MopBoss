@@ -206,6 +206,9 @@ public class NotificationWorker(
 {
     private const int ReminderListLimit = 20;
     private DateTimeOffset _nextReminder = DateTimeOffset.MinValue;
+    private DateTimeOffset _nextSchemaWarning = DateTimeOffset.MinValue;
+    private bool _schemaReady;
+    private bool _schemaWarned;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -221,6 +224,12 @@ public class NotificationWorker(
                 int attempted;
                 using (var scope = scopes.CreateScope())
                 {
+                    if (!await SchemaReadyAsync(scope.ServiceProvider.GetRequiredService<MopBossDbContext>(),
+                            settings, stoppingToken))
+                    {
+                        await Task.Delay(idle, stoppingToken);
+                        continue;
+                    }
                     attempted = await scope.ServiceProvider.GetRequiredService<NotificationDispatcher>()
                         .DispatchDueAsync(stoppingToken);
                     await RemindAboutFailuresAsync(scope.ServiceProvider.GetRequiredService<MopBossDbContext>(),
@@ -243,6 +252,36 @@ public class NotificationWorker(
             }
         }
         logger.LogInformation("Notification worker stopped.");
+    }
+
+    /// <summary>
+    /// False while the database still has pending migrations (they are applied manually, never
+    /// here). Processing waits, with one clear warning per reminder interval instead of a
+    /// SQL exception every cycle; /health/ready reports the mismatch. Once ready, not checked again.
+    /// </summary>
+    internal async Task<bool> SchemaReadyAsync(MopBossDbContext db, NotificationOptions settings, CancellationToken ct)
+    {
+        if (_schemaReady) return true;
+        if (!db.Database.IsRelational()) return _schemaReady = true;
+
+        var pending = (await db.Database.GetPendingMigrationsAsync(ct)).Count();
+        if (pending == 0)
+        {
+            if (_schemaWarned) logger.LogInformation("Database migrations are applied; notification processing has started.");
+            return _schemaReady = true;
+        }
+
+        var now = clock.GetUtcNow();
+        if (now >= _nextSchemaWarning)
+        {
+            logger.LogWarning(
+                "Notification processing is waiting: the database has {Pending} pending migration(s), so quote " +
+                "requests cannot be stored or emailed yet. Apply the reviewed migrations " +
+                "(PRODUCTION_READINESS.md, section 6); they are never applied automatically.", pending);
+            _nextSchemaWarning = now.AddMinutes(settings.FailureReminderMinutes);
+            _schemaWarned = true;
+        }
+        return false;
     }
 
     /// <summary>Logs unresolved failures when the reminder is due. Returns true if it logged.</summary>

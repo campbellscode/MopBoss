@@ -124,8 +124,11 @@ npm run dev
 #   NEXT_PUBLIC_QUOTE_API_URL=http://localhost:5096
 ```
 
-The API starts against MB-Dev before migrations are applied, but `/health/ready` reports
-`Unhealthy` and submissions fail until they are (§6).
+The API starts against MB-Dev before migrations are applied (`/health/live` is `Healthy`),
+but `/health/ready` reports `Unhealthy`, submissions fail, and the notification worker waits
+with one warning per hour ("Notification processing is waiting: … pending migration(s)")
+until they are (§6). The `http`/`https` launch profiles open no browser; the console shows
+"Now listening on" when the API is up.
 
 ## 6. Database migrations: reviewed, never automatic
 

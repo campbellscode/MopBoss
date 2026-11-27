@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using MopBoss.Server.Data;
 using MopBoss.Server.Notifications;
 
@@ -92,4 +93,16 @@ public static class Payloads
         Phone = "(513) 555-0100",
         Email = "dana@example.com",
     };
+}
+
+/// <summary>Captures log messages by level.</summary>
+public sealed class ListLogger<T> : ILogger<T>
+{
+    public List<(LogLevel Level, string Message)> Entries { get; } = [];
+    public List<string> Errors => Entries.Where(e => e.Level >= LogLevel.Error).Select(e => e.Message).ToList();
+    public List<string> Warnings => Entries.Where(e => e.Level == LogLevel.Warning).Select(e => e.Message).ToList();
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+    public bool IsEnabled(LogLevel logLevel) => true;
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+        Func<TState, Exception?, string> formatter) => Entries.Add((logLevel, formatter(state, exception)));
 }

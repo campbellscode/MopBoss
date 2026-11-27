@@ -63,9 +63,18 @@ public class NotificationBacklogHealthCheck(MopBossDbContext db, TimeProvider cl
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken)
     {
         var stuckBefore = clock.GetUtcNow() - StuckAfter;
-        var failed = await db.NotificationOutbox.CountAsync(n => n.Status == NotificationStatus.Failed, cancellationToken);
-        var stuck = await db.NotificationOutbox.CountAsync(
-            n => n.Status == NotificationStatus.Pending && n.NextAttemptAtUtc < stuckBefore, cancellationToken);
+        int failed, stuck;
+        try
+        {
+            failed = await db.NotificationOutbox.CountAsync(n => n.Status == NotificationStatus.Failed, cancellationToken);
+            stuck = await db.NotificationOutbox.CountAsync(
+                n => n.Status == NotificationStatus.Pending && n.NextAttemptAtUtc < stuckBefore, cancellationToken);
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Database down or not migrated yet: report it rather than throw.
+            return HealthCheckResult.Unhealthy("Notification queue unavailable.");
+        }
 
         return failed == 0 && stuck == 0
             ? HealthCheckResult.Healthy()

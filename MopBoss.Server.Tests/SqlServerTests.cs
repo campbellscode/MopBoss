@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using MopBoss.Server.Configuration;
@@ -327,6 +328,39 @@ VALUES (NEWID(), '2026-11-01T10:00:00+00:00', 'Deep Cleaning', 'House', 2, 1, 'N
         // that follows on this connection.
         await using var options = new SqlCommand("SELECT @@OPTIONS & (16384 | 256)", conn);
         Assert.Equal(16384 | 256, (int)(await options.ExecuteScalarAsync())!);
+    }
+
+    [Fact]
+    public async Task An_unmigrated_database_is_reported_calmly_until_migrations_are_applied()
+    {
+        var cs = await sql.NewEmptyDatabaseAsync();
+        var clock = new MutableClock(DateTimeOffset.Parse("2026-11-27T12:00:00Z"));
+        var settings = new NotificationOptions { FailureReminderMinutes = 60 };
+        var log = new ListLogger<NotificationWorker>();
+        var worker = new NotificationWorker(
+            new ServiceCollection().BuildServiceProvider().GetRequiredService<IServiceScopeFactory>(),
+            Options.Create(settings), clock, log);
+
+        await using (var db = SqlServerFixture.Context(cs))
+        {
+            // Readiness says so instead of throwing.
+            var backlog = await new NotificationBacklogHealthCheck(db, clock)
+                .CheckHealthAsync(new HealthCheckContext(), CancellationToken.None);
+            Assert.Equal(HealthStatus.Unhealthy, backlog.Status);
+
+            // The worker waits with one warning per interval, not an exception per cycle.
+            Assert.False(await worker.SchemaReadyAsync(db, settings, CancellationToken.None));
+            Assert.False(await worker.SchemaReadyAsync(db, settings, CancellationToken.None));
+            Assert.Contains("4 pending migration(s)", Assert.Single(log.Warnings));
+            Assert.Empty(log.Errors);
+            clock.Advance(TimeSpan.FromMinutes(61));
+            Assert.False(await worker.SchemaReadyAsync(db, settings, CancellationToken.None));
+            Assert.Equal(2, log.Warnings.Count);
+
+            await db.Database.MigrateAsync(); // the operator applies migrations
+            Assert.True(await worker.SchemaReadyAsync(db, settings, CancellationToken.None));
+            Assert.Contains(log.Entries, e => e.Level == LogLevel.Information && e.Message.Contains("has started"));
+        }
     }
 
     [Fact]
