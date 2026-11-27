@@ -132,7 +132,7 @@ VALUES (NEWID(), '2026-11-01T10:00:00+00:00', 'Deep Cleaning', 'House', 2, 1, 'N
         Assert.Equal(1, await db.NotificationOutbox.CountAsync());
     }
 
-    private static string FindRepoFile(string relative)
+    internal static string FindRepoFile(string relative)
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
         {
@@ -211,6 +211,65 @@ VALUES (NEWID(), '2026-11-01T10:00:00+00:00', 'Deep Cleaning', 'House', 2, 1, 'N
         Assert.Equal(NotificationStatus.Pending, (await check.NotificationOutbox.SingleAsync(n => n.Id == failedA)).Status);
         Assert.Equal(NotificationStatus.Pending, (await check.NotificationOutbox.SingleAsync(n => n.Id == failedB)).Status);
         Assert.Equal(NotificationStatus.HandledManually, (await check.NotificationOutbox.SingleAsync(n => n.Id == handled)).Status);
+    }
+
+    [Fact]
+    public async Task Design_time_context_migrates_only_the_declared_target()
+    {
+        var cs = await sql.NewEmptyDatabaseAsync();
+
+        // Like `dotnet ef database update --connection ...` aimed at a database the declared
+        // target does not allow: refused when the connection opens, before any change.
+        await using (var wrong = DesignTimeDbContextFactory.Create(null, "Development", null))
+        {
+            wrong.Database.SetConnectionString(cs);
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => wrong.Database.MigrateAsync());
+            Assert.Contains("must use MB-Dev", ex.Message);
+        }
+        await using (var conn = new SqlConnection(cs))
+        {
+            await conn.OpenAsync();
+            await using var count = new SqlCommand("SELECT COUNT(*) FROM sys.tables", conn);
+            Assert.Equal(0, (int)(await count.ExecuteScalarAsync())!);
+        }
+
+        await using (var right = DesignTimeDbContextFactory.Create(cs, "Test", null))
+            await right.Database.MigrateAsync();
+        await using var check = SqlServerFixture.Context(cs);
+        Assert.Empty(await check.Database.GetPendingMigrationsAsync());
+    }
+
+    [Fact]
+    public async Task Migration_preflight_checks_the_server_side_database()
+    {
+        var cs = await sql.NewEmptyDatabaseAsync();
+        var actual = new SqlConnectionStringBuilder(cs).InitialCatalog;
+        var template = await File.ReadAllTextAsync(FindRepoFile("database/migration-preflight.sql"));
+        template = System.Text.RegularExpressions.Regex.Replace(template, @"^\s*GO\s*$", "",
+            System.Text.RegularExpressions.RegexOptions.Multiline);
+
+        async Task<int?> Run(string expected, string target, SqlConnection conn)
+        {
+            var text = template.Replace("$(ExpectedDatabase)", expected).Replace("$(MigrationTarget)", target);
+            await using var cmd = new SqlCommand(text, conn);
+            try { await cmd.ExecuteNonQueryAsync(); return null; }
+            catch (SqlException e) { return e.Number; }
+        }
+
+        await using var conn = new SqlConnection(cs);
+        await conn.OpenAsync();
+        await using (var sqlcmdDefaults = new SqlCommand("SET QUOTED_IDENTIFIER OFF; SET XACT_ABORT OFF", conn))
+            await sqlcmdDefaults.ExecuteNonQueryAsync(); // how sqlcmd starts a session
+        Assert.Equal(50100, await Run(actual, "Staging", conn));
+        Assert.Equal(50101, await Run("MB-Dev", "Development", conn));   // connected elsewhere
+        Assert.Equal(50102, await Run(actual, "Development", conn));     // Development must be MB-Dev
+        Assert.Equal(50103, await Run(actual, "Production", conn));      // Production must be MB-Prod
+        Assert.Null(await Run(actual, "Test", conn));
+
+        // XACT_ABORT (16384) and QUOTED_IDENTIFIER (256) stay on for the migration script
+        // that follows on this connection.
+        await using var options = new SqlCommand("SELECT @@OPTIONS & (16384 | 256)", conn);
+        Assert.Equal(16384 | 256, (int)(await options.ExecuteScalarAsync())!);
     }
 
     [Fact]
