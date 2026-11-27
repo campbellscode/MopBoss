@@ -557,6 +557,13 @@
   font-weight: 700;
 }
 
+/* Never split the phone number at its hyphen */
+.doneBody a[href^='tel:'],
+.submitError a[href^='tel:'],
+.sheetCall a[href^='tel:'] {
+  white-space: nowrap;
+}
+
 .submitError:not(:empty) {
   padding-bottom: 16px;
 }
