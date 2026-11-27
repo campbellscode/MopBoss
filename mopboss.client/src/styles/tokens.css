@@ -1,0 +1,122 @@
+/*
+ * Boss Gloss design tokens.
+ * Names follow design-reference/DESIGN_HANDOFF.md; values are copied from the
+ * approved prototype files without rounding.
+ */
+:root {
+  /* Colour: brand */
+  --color-boss-pink: #fc1d8a; /* primary fills, CTAs; ink text on it is 5.3:1 */
+  --color-deep-pink: #d6006c; /* pink text and links on white (5.2:1) */
+  --color-bubblegum: #fb65a4; /* illustration and icon fills only */
+  --color-bubblegum-light: #ff7db8; /* illustration and icon fills only */
+  --color-pink-on-ink: #ff6fb1; /* eyebrows and links on black sections */
+  --color-ink: #0b0b0c; /* type, outlines, hard shadows, dark sections */
+  --color-white: #ffffff;
+  --color-blush: #fff3f8; /* alternate section ground */
+  --color-champagne-gold: #fdca57; /* sparkles only: never text, never large fills */
+  --color-cta-shadow-on-pink: #7a003c; /* hard shadow under the ink button on pink grounds */
+
+  /* Colour: text */
+  --color-body-grey: #3a3a40; /* body copy on light grounds */
+  --color-muted-grey: #55555c; /* captions on light grounds */
+  --color-body-on-ink: #d9d9de; /* body on black */
+  --color-small-on-ink: #b9b9c0; /* small print on black */
+
+  /* Colour: supporting tints used by the prototype */
+  --color-logo-ground: #fcfcfc; /* near-white behind the logo and badge */
+  --color-pink-tint: #ffe3f0; /* pill hover, mobile page ground */
+  --color-pink-chip-hover: #ffd3e6;
+  --color-scene-pink: #ffddeb;
+  --color-disabled-fill: #e9e4e6;
+  --color-disabled-outline: #8e8e96;
+  --color-dust: #e7e0d4; /* sweep track ground */
+  --color-dust-speck: #9a8f7b;
+  --color-placeholder-fill: #fff6d9;
+  --color-placeholder-border: #8a6a00;
+  --color-placeholder-text: #5c4500;
+
+  /* Typography (font families are set by next/font in src/app/fonts.ts) */
+  --font-display: var(--font-unbounded), 'Arial Black', sans-serif;
+  --font-accent: var(--font-bodoni), 'Didot', Georgia, serif;
+  --font-body: var(--font-poppins), system-ui, sans-serif;
+
+  --tracking-display: -0.025em;
+  --tracking-accent: -0.01em;
+  --tracking-eyebrow: 0.18em;
+  --leading-display: 1.02;
+  --leading-body: 1.6;
+
+  --fs-h1: clamp(38px, 5.6vw, 84px);
+  --fs-h2: clamp(34px, 5vw, 72px);
+  --fs-lead: 19px;
+  --fs-body: 16px;
+  --fs-small: 13.5px;
+  --fs-eyebrow: 12px;
+
+  /* Layout */
+  --container: 1328px;
+  --gutter: clamp(20px, 4vw, 56px);
+  --gutter-mobile: 20px;
+  --header-height: 84px;
+  --header-height-mobile: 62px;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 120px;
+
+  /* Radii */
+  --radius-chip: 10px;
+  --radius-input: 16px;
+  --radius-card-sm: 22px;
+  --radius-card: 26px;
+  --radius-card-lg: 28px;
+  --radius-reveal: 36px;
+  --radius-pill: 999px;
+
+  /* Outlines */
+  --outline-width: 2.5px;
+  --rule-width: 2px;
+  --outline: var(--outline-width) solid var(--color-ink);
+  --rule: var(--rule-width) solid var(--color-ink);
+
+  /* Shadows: hard, never soft */
+  --shadow-button: 0 6px 0 var(--color-ink);
+  --shadow-button-hover: 0 10px 0 var(--color-ink);
+  --shadow-button-pressed: 0 2px 0 var(--color-ink);
+  --shadow-card: 0 8px 0 var(--color-ink);
+  --ring-medallion: 0 0 0 8px var(--color-boss-pink), 0 0 0 16px var(--color-ink);
+
+  /* Easings */
+  --ease-sweep: cubic-bezier(0.6, 0, 0.3, 1); /* the Clean Sweep */
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.5); /* button lift */
+  --ease-pop: cubic-bezier(0.2, 0.9, 0.3, 1.6); /* sparkle pop */
+  --ease-glide: cubic-bezier(0.2, 0.8, 0.2, 1); /* reveals, sweep track, steps */
+
+  /* Shapes */
+  --sparkle-shape: polygon(
+    50% 0,
+    53.5% 28%,
+    60% 40%,
+    72% 46.5%,
+    100% 50%,
+    72% 53.5%,
+    60% 60%,
+    53.5% 72%,
+    50% 100%,
+    46.5% 72%,
+    40% 60%,
+    28% 53.5%,
+    0 50%,
+    28% 46.5%,
+    40% 40%,
+    46.5% 28%
+  );
+}

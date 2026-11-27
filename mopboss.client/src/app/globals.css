@@ -1,9 +1,148 @@
+@import '../styles/tokens.css';
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
+  background: var(--color-white);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+a {
+  color: var(--color-deep-pink);
+}
+
+a:hover {
+  color: var(--color-ink);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+/* An ink focus ring disappears on black grounds, so switch it to light pink there. */
+.on-ink :focus-visible {
+  outline-color: var(--color-pink-on-ink);
+}
+
+/* ---------- Shared type utilities (.d / .i / .eb in the prototype) ---------- */
+
+.display {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-display);
+}
+
+.accent {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: var(--tracking-accent);
+  color: var(--color-deep-pink);
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Skip link ---------- */
+
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: 12px;
+  z-index: 100;
+  padding: 14px 20px;
+  border: var(--outline);
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  color: var(--color-ink);
+  font: 700 14px/1 var(--font-body);
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+/* ---------- Scroll reveals ----------
+ * Content is visible by default. RevealObserver adds `.js` to <html> only once
+ * it is running with IntersectionObserver available and motion allowed.
+ */
+.js .rv {
+  opacity: 0;
+  transform: translateY(34px);
+}
+
+.js .rv.in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.8s ease,
+    transform 0.9s var(--ease-glide);
+}
+
+@media (max-width: 767.98px) {
+  .js .rv {
+    transform: translateY(26px);
+  }
+
+  .js .rv.in {
+    transition:
+      opacity 0.7s ease,
+      transform 0.8s var(--ease-glide);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
