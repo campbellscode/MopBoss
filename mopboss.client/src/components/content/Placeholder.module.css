@@ -1,0 +1,38 @@
+/* Placeholder chip (.ph): dashed gold, marks content awaiting confirmation. Audit mode only. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border: 1.5px dashed var(--color-placeholder-border);
+  border-radius: var(--radius-chip);
+  background: var(--color-placeholder-fill);
+  color: var(--color-placeholder-text);
+  font: 600 11.5px/1.35 var(--font-body);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Larger dashed box with a title, for paragraphs still to be written */
+.note {
+  padding: 22px 24px;
+  border: 1.5px dashed var(--color-placeholder-border);
+  border-radius: 18px;
+  background: var(--color-placeholder-fill);
+  color: var(--color-placeholder-text);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.noteTitle {
+  display: block;
+  margin-bottom: 10px;
+  font: 700 11.5px/1.3 var(--font-display);
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 767.98px) {
+  .chip {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}

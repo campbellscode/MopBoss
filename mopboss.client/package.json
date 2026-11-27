@@ -11,7 +11,10 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "dev:audit": "node scripts/with-audit.mjs dev",
+    "build:audit": "node scripts/with-audit.mjs build",
+    "content:needed": "vitest run src/content/needed.test.ts -u"
   },
   "dependencies": {
     "next": "16.4.6",
