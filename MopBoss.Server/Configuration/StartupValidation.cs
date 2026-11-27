@@ -122,8 +122,10 @@ public static class StartupValidation
         if (n.PollIntervalSeconds < 1) errors.Add("Notifications:PollIntervalSeconds must be at least 1.");
         if (n.BaseDelaySeconds < 1 || n.MaxDelaySeconds < n.BaseDelaySeconds)
             errors.Add("Notifications:BaseDelaySeconds must be at least 1 and no more than MaxDelaySeconds.");
-        if (n.LeaseSeconds <= smtp.TimeoutSeconds * 2)
-            errors.Add("Notifications:LeaseSeconds must be more than twice Smtp:TimeoutSeconds, so a slow send cannot be claimed twice.");
+        // One send is connect + authenticate + send + disconnect, each bounded by the SMTP
+        // timeout; the hard delivery deadline (3/4 of the lease) must leave room for that.
+        if (n.LeaseSeconds * 0.75 < smtp.TimeoutSeconds * 2)
+            errors.Add("Notifications:LeaseSeconds must be at least 2.7 × Smtp:TimeoutSeconds, so a delivery ends well before its lease.");
         return errors;
     }
 

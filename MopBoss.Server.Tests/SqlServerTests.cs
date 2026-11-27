@@ -178,6 +178,42 @@ VALUES ('11111111-1111-1111-1111-111111111111', '2026-11-20T10:00:00+00:00', 'De
     }
 
     [Fact]
+    public async Task A_slow_batch_on_sql_server_never_lets_a_second_worker_resend_a_live_delivery()
+    {
+        var cs = await sql.NewMigratedDatabaseAsync();
+        var clock = new MutableClock(DateTimeOffset.UtcNow);
+        await using (var db = SqlServerFixture.Context(cs))
+        {
+            var service = new QuoteSubmissionService(db, clock, NullLogger<QuoteSubmissionService>.Instance);
+            await service.SubmitAsync(Payloads.Dto(name: "First Customer"), Guid.NewGuid(), CancellationToken.None);
+            await service.SubmitAsync(Payloads.Dto(name: "Second Customer"), Guid.NewGuid(), CancellationToken.None);
+        }
+        var options = Options.Create(new NotificationOptions { LeaseSeconds = 120 });
+        var workerB = new FakeNotifier();
+        var workerA = new FakeNotifier();
+        var competitorRan = false;
+        workerA.During = async _ =>
+        {
+            if (workerA.Calls == 1) { clock.Advance(TimeSpan.FromSeconds(100)); return; } // slow first send
+            if (competitorRan) return;
+            competitorRan = true;
+            await using var db = SqlServerFixture.Context(cs);
+            await new NotificationDispatcher(db, workerB, options, clock,
+                NullLogger<NotificationDispatcher>.Instance).DispatchDueAsync(CancellationToken.None);
+        };
+
+        await using (var db = SqlServerFixture.Context(cs))
+            await new NotificationDispatcher(db, workerA, options, clock,
+                NullLogger<NotificationDispatcher>.Instance).DispatchDueAsync(CancellationToken.None);
+
+        Assert.True(competitorRan);
+        Assert.Equal(2, workerA.Calls);
+        Assert.Equal(0, workerB.Calls);
+        await using var check = SqlServerFixture.Context(cs);
+        Assert.All(await check.NotificationOutbox.ToListAsync(), n => Assert.Equal(NotificationStatus.Sent, n.Status));
+    }
+
+    [Fact]
     public async Task End_to_end_the_api_stores_the_request_and_the_worker_emails_it_after_a_retry()
     {
         var cs = await sql.NewMigratedDatabaseAsync();
