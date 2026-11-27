@@ -31,6 +31,19 @@ public sealed class SqlServerFixture : IAsyncLifetime
         return builder.ConnectionString;
     }
 
+    /// <summary>Connection string for a new database that exists but has no tables at all.</summary>
+    public async Task<string> NewEmptyDatabaseAsync()
+    {
+        var connectionString = NewDatabase();
+        var name = new SqlConnectionStringBuilder(connectionString).InitialCatalog;
+        var master = new SqlConnectionStringBuilder(connectionString) { InitialCatalog = "master" };
+        await using var conn = new SqlConnection(master.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand($"CREATE DATABASE [{name}]", conn);
+        await cmd.ExecuteNonQueryAsync();
+        return connectionString;
+    }
+
     /// <summary>Connection string for a new test database with all migrations applied.</summary>
     public async Task<string> NewMigratedDatabaseAsync()
     {

@@ -313,3 +313,69 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127171743_DurableIdempotencyKeys'
+)
+BEGIN
+    CREATE TABLE [IdempotencyKeys] (
+        [Key] uniqueidentifier NOT NULL,
+        [QuoteRequestId] uniqueidentifier NOT NULL,
+        [PayloadHash] char(64) NOT NULL,
+        [CreatedAtUtc] datetimeoffset NOT NULL,
+        CONSTRAINT [PK_IdempotencyKeys] PRIMARY KEY ([Key]),
+        CONSTRAINT [FK_IdempotencyKeys_QuoteRequests_QuoteRequestId] FOREIGN KEY ([QuoteRequestId]) REFERENCES [QuoteRequests] ([Id]) ON DELETE NO ACTION
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127171743_DurableIdempotencyKeys'
+)
+BEGIN
+    EXEC(N'INSERT INTO [IdempotencyKeys] ([Key], [QuoteRequestId], [PayloadHash], [CreatedAtUtc]) SELECT [IdempotencyKey], [Id], [PayloadHash], [CreatedAtUtc] FROM [QuoteRequests] WHERE [IdempotencyKey] IS NOT NULL;');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127171743_DurableIdempotencyKeys'
+)
+BEGIN
+    CREATE INDEX [IX_IdempotencyKeys_QuoteRequestId] ON [IdempotencyKeys] ([QuoteRequestId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127171743_DurableIdempotencyKeys'
+)
+BEGIN
+    DROP INDEX [IX_QuoteRequests_IdempotencyKey] ON [QuoteRequests];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127171743_DurableIdempotencyKeys'
+)
+BEGIN
+    DECLARE @var3 nvarchar(max);
+    SELECT @var3 = QUOTENAME([d].[name])
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[QuoteRequests]') AND [c].[name] = N'IdempotencyKey');
+    IF @var3 IS NOT NULL EXEC(N'ALTER TABLE [QuoteRequests] DROP CONSTRAINT ' + @var3 + ';');
+    ALTER TABLE [QuoteRequests] DROP COLUMN [IdempotencyKey];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261127171743_DurableIdempotencyKeys'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261127171743_DurableIdempotencyKeys', N'10.0.11');
+END;
+
+COMMIT;
+GO
+

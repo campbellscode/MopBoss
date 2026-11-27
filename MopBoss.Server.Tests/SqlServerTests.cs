@@ -69,13 +69,7 @@ VALUES ('11111111-1111-1111-1111-111111111111', '2026-11-20T10:00:00+00:00', 'De
         var batches = System.Text.RegularExpressions.Regex.Split(script, @"^\s*GO\s*$",
                 System.Text.RegularExpressions.RegexOptions.Multiline)
             .Where(b => !string.IsNullOrWhiteSpace(b)).ToList();
-        var cs = sql.NewDatabase();
-        await using (var create = SqlServerFixture.Context(cs))
-            await create.Database.EnsureCreatedAsync(); // empty database shell only
-        await using (var reset = SqlServerFixture.Context(cs))
-        {
-            await reset.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS NotificationOutbox; DROP TABLE IF EXISTS QuoteRequests;");
-        }
+        var cs = await sql.NewEmptyDatabaseAsync();
 
         for (var run = 0; run < 2; run++)
         {
@@ -137,6 +131,92 @@ VALUES ('11111111-1111-1111-1111-111111111111', '2026-11-20T10:00:00+00:00', 'De
         await using var check = SqlServerFixture.Context(cs);
         Assert.Equal(1, await check.QuoteRequests.CountAsync());
         Assert.Equal(1, await check.NotificationOutbox.CountAsync());
+    }
+
+    [Fact]
+    public async Task Concurrent_identical_requests_with_different_keys_store_one_quote()
+    {
+        var cs = await sql.NewMigratedDatabaseAsync();
+        var keys = Enumerable.Range(0, 8).Select(_ => Guid.NewGuid()).ToList();
+
+        var results = await Task.WhenAll(keys.Select(async key =>
+        {
+            await using var db = SqlServerFixture.Context(cs);
+            return await Service(db).SubmitAsync(Payloads.Dto(), key, CancellationToken.None);
+        }));
+
+        Assert.Single(results.Select(r => r.Reference).Distinct());
+        Assert.Single(results, r => r.Outcome == SubmissionOutcome.Created);
+        Assert.Equal(7, results.Count(r => r.Outcome == SubmissionOutcome.Duplicate));
+        await using var check = SqlServerFixture.Context(cs);
+        Assert.Equal(1, await check.QuoteRequests.CountAsync());
+        Assert.Equal(1, await check.NotificationOutbox.CountAsync());
+        Assert.Equal(8, await check.IdempotencyKeys.CountAsync()); // every accepted key is durable
+    }
+
+    [Fact]
+    public async Task Keys_accepted_as_duplicates_keep_their_answer_after_the_window()
+    {
+        var cs = await sql.NewMigratedDatabaseAsync();
+        var clock = new MutableClock(DateTimeOffset.UtcNow);
+        QuoteSubmissionService At(MopBossDbContext db) => new(db, clock, NullLogger<QuoteSubmissionService>.Instance);
+        var (firstKey, duplicateKey) = (Guid.NewGuid(), Guid.NewGuid());
+
+        await using var db = SqlServerFixture.Context(cs);
+        var first = await At(db).SubmitAsync(Payloads.Dto(), firstKey, CancellationToken.None);
+        var duplicate = await At(db).SubmitAsync(Payloads.Dto(), duplicateKey, CancellationToken.None);
+        Assert.Equal(SubmissionOutcome.Duplicate, duplicate.Outcome);
+        Assert.Equal(first.Reference, duplicate.Reference);
+
+        clock.Advance(QuoteSubmissionService.DuplicateWindow + TimeSpan.FromMinutes(1));
+
+        // Retrying the duplicate's key after the window still returns the same quote...
+        var retry = await At(db).SubmitAsync(Payloads.Dto(), duplicateKey, CancellationToken.None);
+        Assert.Equal(SubmissionOutcome.Replayed, retry.Outcome);
+        Assert.Equal(first.Reference, retry.Reference);
+
+        // ...a previously accepted key cannot be reused for different details...
+        var conflict = await At(db).SubmitAsync(Payloads.Dto(name: "Someone Else"), duplicateKey, CancellationToken.None);
+        Assert.Equal(SubmissionOutcome.KeyConflict, conflict.Outcome);
+
+        // ...and a fresh identical request after the window is a new inquiry.
+        var again = await At(db).SubmitAsync(Payloads.Dto(), Guid.NewGuid(), CancellationToken.None);
+        Assert.Equal(SubmissionOutcome.Created, again.Outcome);
+        Assert.NotEqual(first.Reference, again.Reference);
+        Assert.Equal(2, await db.QuoteRequests.CountAsync());
+    }
+
+    [Fact]
+    public async Task Concurrent_different_requests_with_one_key_store_exactly_one()
+    {
+        var cs = await sql.NewMigratedDatabaseAsync();
+        var key = Guid.NewGuid();
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 6).Select(async i =>
+        {
+            await using var db = SqlServerFixture.Context(cs);
+            return await Service(db).SubmitAsync(Payloads.Dto(name: $"Customer {i}"), key, CancellationToken.None);
+        }));
+
+        Assert.Single(results, r => r.Outcome == SubmissionOutcome.Created);
+        Assert.All(results.Where(r => r.Outcome != SubmissionOutcome.Created),
+            r => Assert.Equal(SubmissionOutcome.KeyConflict, r.Outcome));
+        await using var check = SqlServerFixture.Context(cs);
+        Assert.Equal(1, await check.QuoteRequests.CountAsync());
+        Assert.Equal(1, await check.IdempotencyKeys.CountAsync());
+    }
+
+    [Fact]
+    public async Task Distinct_inquiries_are_not_blocked_by_each_other()
+    {
+        var cs = await sql.NewMigratedDatabaseAsync();
+        var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(async i =>
+        {
+            await using var db = SqlServerFixture.Context(cs);
+            return await Service(db).SubmitAsync(Payloads.Dto(name: $"Customer {i}"), Guid.NewGuid(), CancellationToken.None);
+        }));
+        Assert.All(results, r => Assert.Equal(SubmissionOutcome.Created, r.Outcome));
+        Assert.Equal(8, results.Select(r => r.Reference).Distinct().Count());
     }
 
     [Fact]

@@ -22,6 +22,32 @@ namespace MopBoss.Server.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("MopBoss.Server.Data.IdempotencyKey", b =>
+                {
+                    b.Property<Guid>("Key")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("QuoteRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Key");
+
+                    b.HasIndex("QuoteRequestId");
+
+                    b.ToTable("IdempotencyKeys", (string)null);
+                });
+
             modelBuilder.Entity("MopBoss.Server.Data.NotificationOutbox", b =>
                 {
                     b.Property<Guid>("Id")
@@ -111,9 +137,6 @@ namespace MopBoss.Server.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<Guid?>("IdempotencyKey")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -172,10 +195,6 @@ namespace MopBoss.Server.Data.Migrations
 
                     b.HasIndex("CreatedAtUtc");
 
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique()
-                        .HasFilter("[IdempotencyKey] IS NOT NULL");
-
                     b.HasIndex("Reference")
                         .IsUnique();
 
@@ -195,6 +214,17 @@ namespace MopBoss.Server.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MopBoss.Server.Data.IdempotencyKey", b =>
+                {
+                    b.HasOne("MopBoss.Server.Data.QuoteRequest", "QuoteRequest")
+                        .WithMany("IdempotencyKeys")
+                        .HasForeignKey("QuoteRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("QuoteRequest");
+                });
+
             modelBuilder.Entity("MopBoss.Server.Data.NotificationOutbox", b =>
                 {
                     b.HasOne("MopBoss.Server.Data.QuoteRequest", "QuoteRequest")
@@ -208,6 +238,8 @@ namespace MopBoss.Server.Data.Migrations
 
             modelBuilder.Entity("MopBoss.Server.Data.QuoteRequest", b =>
                 {
+                    b.Navigation("IdempotencyKeys");
+
                     b.Navigation("Notification");
                 });
 #pragma warning restore 612, 618

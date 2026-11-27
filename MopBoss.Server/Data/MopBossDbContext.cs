@@ -6,6 +6,7 @@ public class MopBossDbContext(DbContextOptions<MopBossDbContext> options) : DbCo
 {
     public DbSet<QuoteRequest> QuoteRequests => Set<QuoteRequest>();
     public DbSet<NotificationOutbox> NotificationOutbox => Set<NotificationOutbox>();
+    public DbSet<IdempotencyKey> IdempotencyKeys => Set<IdempotencyKey>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,7 +24,6 @@ public class MopBossDbContext(DbContextOptions<MopBossDbContext> options) : DbCo
             e.Property(q => q.Reference).HasMaxLength(QuoteLimits.Reference).IsUnicode(false);
             e.HasIndex(q => q.Reference).IsUnique();
             e.Property(q => q.Status).HasConversion<string>().HasMaxLength(20).IsUnicode(false);
-            e.HasIndex(q => q.IdempotencyKey).IsUnique().HasFilter("[IdempotencyKey] IS NOT NULL");
             e.Property(q => q.PayloadHash).HasMaxLength(64).IsUnicode(false).IsFixedLength();
             e.HasIndex(q => new { q.PayloadHash, q.CreatedAtUtc });
             e.Property(q => q.Service).HasMaxLength(QuoteLimits.Choice);
@@ -37,6 +37,17 @@ public class MopBossDbContext(DbContextOptions<MopBossDbContext> options) : DbCo
             e.Property(q => q.Notes).HasMaxLength(QuoteLimits.Notes);
             e.HasIndex(q => q.CreatedAtUtc);
             e.HasIndex(q => new { q.Status, q.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<IdempotencyKey>(e =>
+        {
+            e.ToTable("IdempotencyKeys");
+            e.HasKey(k => k.Key);
+            e.Property(k => k.PayloadHash).HasMaxLength(64).IsUnicode(false).IsFixedLength();
+            e.HasOne(k => k.QuoteRequest).WithMany(q => q.IdempotencyKeys)
+                .HasForeignKey(k => k.QuoteRequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(k => k.QuoteRequestId);
         });
 
         modelBuilder.Entity<NotificationOutbox>(e =>

@@ -27,12 +27,6 @@ public class QuoteRequest
     /// <summary>Last change to this row (UTC).</summary>
     public DateTimeOffset UpdatedAtUtc { get; set; }
 
-    /// <summary>
-    /// Client-supplied key that makes retries safe: the same key returns the same request.
-    /// Null only for rows created before idempotency existed.
-    /// </summary>
-    public Guid? IdempotencyKey { get; set; }
-
     /// <summary>SHA-256 of the normalised request, to recognise replays and accidental resubmits.</summary>
     public required string PayloadHash { get; set; }
 
@@ -50,4 +44,6 @@ public class QuoteRequest
     public string? Notes { get; set; }
 
     public NotificationOutbox? Notification { get; set; }
+
+    public List<IdempotencyKey> IdempotencyKeys { get; set; } = [];
 }
