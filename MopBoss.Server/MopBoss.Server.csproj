@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>bda84e9e-e104-4914-90bc-d4fc211e050b</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,6 +16,15 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Allowed quote-form choices, shared with the website (single source of truth). -->
+    <EmbeddedResource Include="..\mopboss.client\src\content\quote-options.json" LogicalName="quote-options.json" Link="Quotes\quote-options.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MopBoss.Server.Tests" />
   </ItemGroup>
 
 </Project>

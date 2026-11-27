@@ -1,12 +1,40 @@
 namespace MopBoss.Server.Data;
 
-/// <summary>A quote request submitted through the website, stored before Linda is emailed.</summary>
+/// <summary>Where a quote request is in Linda's process. Changed by Linda's team, never by the public API.</summary>
+public enum QuoteStatus
+{
+    New,
+    Contacted,
+    Quoted,
+    Scheduled,
+    Completed,
+    Cancelled,
+}
+
+/// <summary>A quote request submitted through the website.</summary>
 public class QuoteRequest
 {
     public Guid Id { get; set; }
 
-    /// <summary>When the server received the request (UTC).</summary>
-    public DateTimeOffset ReceivedAt { get; set; }
+    /// <summary>Short customer-facing reference, e.g. MB-7K3Q9X. Unique.</summary>
+    public required string Reference { get; set; }
+
+    public QuoteStatus Status { get; set; } = QuoteStatus.New;
+
+    /// <summary>When the server stored the request (UTC).</summary>
+    public DateTimeOffset CreatedAtUtc { get; set; }
+
+    /// <summary>Last change to this row (UTC).</summary>
+    public DateTimeOffset UpdatedAtUtc { get; set; }
+
+    /// <summary>
+    /// Client-supplied key that makes retries safe: the same key returns the same request.
+    /// Null only for rows created before idempotency existed.
+    /// </summary>
+    public Guid? IdempotencyKey { get; set; }
+
+    /// <summary>SHA-256 of the normalised request, to recognise replays and accidental resubmits.</summary>
+    public required string PayloadHash { get; set; }
 
     public required string Service { get; set; }
     public required string Property { get; set; }
@@ -21,9 +49,5 @@ public class QuoteRequest
     public string? Zip { get; set; }
     public string? Notes { get; set; }
 
-    /// <summary>Set once the notification email to Linda was sent.</summary>
-    public DateTimeOffset? NotifiedAt { get; set; }
-
-    /// <summary>Last notification error, so unsent requests can be found and followed up.</summary>
-    public string? NotificationError { get; set; }
+    public NotificationOutbox? Notification { get; set; }
 }

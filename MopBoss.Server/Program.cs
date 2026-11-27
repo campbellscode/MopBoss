@@ -1,6 +1,8 @@
 using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using MopBoss.Server.Configuration;
 using MopBoss.Server.Data;
+using MopBoss.Server.Notifications;
 using MopBoss.Server.Quotes;
 
 namespace MopBoss.Server
@@ -19,27 +21,30 @@ namespace MopBoss.Server
             builder.Services.AddProblemDetails();
             builder.Services.AddSingleton(TimeProvider.System);
 
-            // Quote requests are stored in SQL Server. Migrations are applied manually.
+            // Quote requests live in SQL Server. Migrations are applied manually, never at startup.
             builder.Services.AddDbContext<MopBossDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("MopBoss")));
+            builder.Services.AddScoped<QuoteSubmissionService>();
 
-            // Email Linda over SMTP when configured; otherwise only log (local development).
+            // Notifications: queued in the outbox with each request, delivered in the background.
             var smtpSection = builder.Configuration.GetSection(SmtpOptions.Section);
             builder.Services.Configure<SmtpOptions>(smtpSection);
+            builder.Services.Configure<NotificationOptions>(builder.Configuration.GetSection(NotificationOptions.Section));
             if (smtpSection.Get<SmtpOptions>()?.IsConfigured == true)
                 builder.Services.AddScoped<IQuoteNotifier, SmtpQuoteNotifier>();
             else
                 builder.Services.AddScoped<IQuoteNotifier, LoggingQuoteNotifier>();
+            builder.Services.AddScoped<NotificationDispatcher>();
+            if (builder.Configuration.GetSection(NotificationOptions.Section).Get<NotificationOptions>()?.WorkerEnabled ?? true)
+                builder.Services.AddHostedService<NotificationWorker>();
 
             // Only the website may call the API from a browser.
             var allowedOrigins = builder.Configuration.GetSection("Site:AllowedOrigins").Get<string[]>() ?? [];
             builder.Services.AddCors(options => options.AddPolicy(SiteCorsPolicy, policy => policy
                 .WithOrigins(allowedOrigins)
                 .WithMethods("POST")
-                .WithHeaders("Content-Type")));
+                .WithHeaders("Content-Type", QuotesController.IdempotencyHeader)));
 
-            // Per-IP limit on quote submissions. Behind a reverse proxy, configure
-            // forwarded headers so RemoteIpAddress is the visitor, not the proxy.
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
