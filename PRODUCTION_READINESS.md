@@ -1,7 +1,8 @@
 # Production readiness: Mop Boss
 
-Status at the end of Phase 3 hardening (branch `hardening/phase-3`). What `main` looked like
-before this work is recorded in [`docs/PHASE3_AUDIT.md`](docs/PHASE3_AUDIT.md).
+Status at the end of Phase 3 hardening and the independent-review remediation (branch
+`hardening/phase-3`). What `main` looked like before this work is recorded in
+[`docs/PHASE3_AUDIT.md`](docs/PHASE3_AUDIT.md).
 
 **Verdict: not ready to launch.** The code is in a launchable state, but the launch blockers
 below need decisions, accounts, credentials or content that only the owner can provide.
@@ -40,7 +41,8 @@ Browser ──HTTPS──▶ Website (Next.js 16, prerendered pages, `next start
                                               SQL Server (MB-Dev / MB-Prod)
                                                     ▲
                      NotificationWorker (BackgroundService, same process)
-                        claims due outbox rows (lease + concurrency token)
+                        claims one due row at a time (lease + concurrency token),
+                        sends within 75% of the lease
                         ──SMTP (TLS)──▶ provider ──▶ Linda's inbox
 ```
 
@@ -48,14 +50,14 @@ Browser ──HTTPS──▶ Website (Next.js 16, prerendered pages, `next start
   It never claims the email was sent. The website shows the reference and says the request
   is saved.
 - There are no public endpoints to read requests or change their status. Status changes are
-  operator SQL (`database/operations.sql`, query F).
+  operator SQL (`database/operations-recovery.sql`, section `set-status`).
 
 ## 3. Environments and databases
 
 | Environment | Database | Email | How it is enforced |
 | --- | --- | --- | --- |
-| Development | **MB-Dev** only | Logging only, or a loopback capture service (smtp4dev, Mailpit), or a real relay **only** with `Smtp:DevelopmentRecipientOverride` (a test inbox); subjects get `[TEST]` | Startup refuses any other database or an unsafe SMTP target |
-| Production | **MB-Prod** only | Configured provider to Linda's approved address, StartTls or SslOnConnect | Startup refuses MB-Dev, missing SMTP, plain-text SMTP, unencrypted DB connections or `TrustServerCertificate=True` |
+| Development | **MB-Dev** only | Logging only (rows become `Suppressed`, never `Sent`), or a loopback capture service (smtp4dev, Mailpit), or a real relay **only** with `Smtp:DevelopmentRecipientOverride` (a separate test inbox, not `To` or `From`). Subjects get `[TEST]`, bodies open with a TEST banner, and there is no customer `Reply-To` | Startup refuses any other database or an unsafe SMTP target |
+| Production | **MB-Prod** only | Configured provider to Linda's approved address, StartTls or SslOnConnect | Startup refuses MB-Dev, missing SMTP, plain-text SMTP, a disabled notification worker, unencrypted DB connections or `TrustServerCertificate=True` |
 | Testing (automated) | Disposable `MopBossTest_*` databases in a SQL Server container | In-process fake SMTP server | Startup refuses MB-Dev/MB-Prod for any other environment; the test fixture refuses any database not named `MopBossTest_*` |
 
 - There is **no fallback connection string**. A missing value stops the API at startup with
@@ -63,6 +65,9 @@ Browser ──HTTPS──▶ Website (Next.js 16, prerendered pages, `next start
 - At startup the API logs the environment and **database name only** (never server or
   credentials), e.g. `Environment Production uses database MB-Prod`.
 - CI has no database credentials and cannot reach either database.
+- **Migration tooling is guarded too** (§6): it refuses to connect unless the operator
+  declares the target and the database name matches, and production needs a second,
+  typed confirmation. The guards prevent mistakes; they are not a permission boundary.
 
 ## 4. Configuration reference
 
@@ -77,16 +82,22 @@ Browser ──HTTPS──▶ Website (Next.js 16, prerendered pages, `next start
 | `Smtp__From`, `Smtp__To` | Production | `To` is Linda's approved address |
 | `Smtp__DevelopmentRecipientOverride` | Non-production with a real relay | Must be empty in Production |
 | `ReverseProxy__KnownProxies__0` / `ReverseProxy__KnownNetworks__0` | When behind a proxy | Without these, forwarded headers are ignored, and behind a proxy every visitor shares one rate-limit bucket |
-| `Notifications__*` | Optional | Defaults: poll 10 s, batch 10, 8 attempts, 30 s base delay, 1 h cap, 120 s lease |
+| `Notifications__*` | Optional | Defaults: poll 10 s, batch 10, 8 attempts, 30 s base delay, 1 h cap, 120 s lease, failure reminder every 60 min. The lease must be at least 2.7 × `Smtp__TimeoutSeconds` (a send may use 75% of the lease). `Notifications__WorkerEnabled` must stay `true` in Production |
 | `AllowedHosts` | Recommended | Set to the API host name (default `*`) |
-| `MOPBOSS_MIGRATIONS_CONNECTION` | Only when applying migrations | Migration identity, set in the operator's shell only; never stored |
+| `MOPBOSS_MIGRATIONS_CONNECTION` | Only for `dotnet ef` against a database | Migration identity, set in the operator's shell only; never stored |
+| `MOPBOSS_MIGRATION_TARGET` | Whenever migration tooling connects | `Development` (MB-Dev only), `Production` (MB-Prod only) or `Test` (`MopBossTest_*` only) |
+| `MOPBOSS_MIGRATION_AUTHORIZE_PRODUCTION` | Only for MB-Prod | Must be exactly `MB-Prod` |
 
 ### Website (`mopboss.client`): build-time variables
 
+Every `next build` must state its deployment; anything missing, misspelt or unsafe stops
+the build. CI proves the refusals (`npm run check:build-guard`).
+
 | Variable | Production value |
 | --- | --- |
-| `NEXT_PUBLIC_DEPLOY_ENV` | `production`. The build then **refuses** to run unless the two URLs below are https and audit mode is off |
-| `NEXT_PUBLIC_QUOTE_API_URL` | The API's https origin. If it is missing in production, the form tells visitors to phone Linda and never pretends to send |
+| `NEXT_PUBLIC_DEPLOY_ENV` | `production` (required in every build: `development`, `preview` or `production`) |
+| `NEXT_PUBLIC_QUOTE_MODE` | `live` or unset. `demo` is refused in production |
+| `NEXT_PUBLIC_QUOTE_API_URL` | The API's https origin, not a local address. If a build ever ships without valid settings, the form tells visitors to phone Linda and never pretends to send |
 | `NEXT_PUBLIC_SITE_URL` | The site's https origin (canonical URLs, sitemap, Open Graph) |
 | `NEXT_PUBLIC_CONTENT_AUDIT` | Unset or `0` |
 
@@ -105,12 +116,16 @@ dotnet user-secrets set "Smtp:Security" "None" --project MopBoss.Server
 dotnet user-secrets set "Smtp:From" "quotes@example.test" --project MopBoss.Server
 dotnet user-secrets set "Smtp:To" "linda@example.test" --project MopBoss.Server
 
-# Website
+# Website: `npm run dev` is an explicit demo by default (.env.development).
 cd mopboss.client && npm ci
-NEXT_PUBLIC_QUOTE_API_URL=http://localhost:5096 npm run dev      # or leave unset for demo mode
+npm run dev
+# To use the local API, create mopboss.client/.env.development.local containing:
+#   NEXT_PUBLIC_QUOTE_MODE=live
+#   NEXT_PUBLIC_QUOTE_API_URL=http://localhost:5096
 ```
 
-Development will not start against MB-Dev until the migrations are applied there (§6).
+The API starts against MB-Dev before migrations are applied, but `/health/ready` reports
+`Unhealthy` and submissions fail until they are (§6).
 
 ## 6. Database migrations: reviewed, never automatic
 
@@ -118,23 +133,56 @@ The API never migrates at startup. Migrations live in `MopBoss.Server/Data/Migra
 reviewable script is `database/MopBoss.migrations.idempotent.sql` (CI fails if it is stale).
 
 1. **Review** the migration code and the generated script. The `QuoteLifecycleAndNotificationOutbox`
-   migration is data-preserving: existing rows get legacy references (`MB-` + 9 hex digits)
-   and status `New`, and any Phase 2 request that was never emailed is queued for delivery.
+   migration is data-preserving. It first runs a **preflight that changes nothing and stops**
+   if existing rows would violate the new constraints (rooms out of range, no phone and no
+   email) or exceed the legacy reference range. Existing rows get collision-free legacy
+   references (`MB-L` + 8 digits, by creation order) and status `New`, and any Phase 2
+   request that was never emailed is queued for delivery. `DurableIdempotencyKeys` moves
+   keys into their own table; `NotificationResolutionStatuses` adds `HandledManually` and
+   `Suppressed`.
 2. **Validate on an isolated database.** CI and `dotnet test` run the committed script twice
-   on a fresh SQL Server 2022 container, and upgrade a Phase 2 schema containing legacy rows.
-3. **Apply to MB-Dev** (with approval), using the migration identity:
+   on a fresh SQL Server 2022 container, upgrade a Phase 2 schema containing legacy rows,
+   and check the preflight refusal.
+3. **Apply to MB-Dev** (with approval), using the MB-Dev migration identity. Preferred, the
+   guarded runner (sqlcmd 17+; never put a password on the command line: use Windows
+   authentication, or `SQLCMDUSER`/`SQLCMDPASSWORD` in this shell only):
+   ```powershell
+   ./database/Invoke-MopBossMigration.ps1 -Target Development -Server '<host>,1433' -Database MB-Dev -DryRun
+   ./database/Invoke-MopBossMigration.ps1 -Target Development -Server '<host>,1433' -Database MB-Dev
+   ```
+   It refuses mismatched target/database pairs before connecting, then runs
+   `database/migration-preflight.sql` and the script on one connection with `-b` (stop at the
+   first error), `-I` and `-N` (encrypted). The preflight checks `DB_NAME()` on the server,
+   turns on `XACT_ABORT` (a failing migration rolls back its own transaction) and sets the
+   session options the script needs. **Plain `sqlcmd` without `-I` fails on the filtered
+   index**, so do not run the script with bare sqlcmd. In SSMS, run the preflight first in the
+   same window with SQLCMD mode on.
+
+   Or with `dotnet ef`:
    ```bash
+   export MOPBOSS_MIGRATION_TARGET=Development
    export MOPBOSS_MIGRATIONS_CONNECTION="<MB-Dev migration identity connection string>"
    dotnet ef migrations list --project MopBoss.Server        # read-only: what is applied
    dotnet ef database update --project MopBoss.Server
    ```
-   or run `database/MopBoss.migrations.idempotent.sql` in SSMS / `sqlcmd`.
-4. **Verify** on MB-Dev: the API starts, `/health/ready` is `Healthy`, and a test request
-   reaches the test inbox.
+   Every connection `dotnet ef` opens, including `--connection` overrides, is checked against
+   the target before opening and again against the database the server reports. Generating
+   scripts needs neither variable and never connects.
+4. **Verify** on MB-Dev: `/health/ready` is `Healthy` (it is `Unhealthy` while any migration
+   is pending or the database has one this build does not know), and a test request reaches
+   the test inbox.
 5. **Back up MB-Prod** and confirm the backup restores (§10).
 6. **Approve** the same reviewed script for production. Do not regenerate it.
-7. **Apply to MB-Prod** with the production migration identity, then check:
-   `SELECT MigrationId FROM __EFMigrationsHistory`, `/health/ready`, and one real request.
+7. **Apply to MB-Prod** with the production migration identity:
+   `-Target Production -Database MB-Prod -ConfirmProduction MB-Prod` (the runner refuses
+   `-TrustServerCertificate` for production), or `MOPBOSS_MIGRATION_TARGET=Production` plus
+   `MOPBOSS_MIGRATION_AUTHORIZE_PRODUCTION=MB-Prod` for `dotnet ef` (an encrypted connection with
+   a validated certificate is required). Then check `SELECT MigrationId FROM __EFMigrationsHistory`,
+   `/health/ready`, and one real request.
+
+These checks catch a mistyped name, a pasted wrong connection string or a stale override.
+They do **not** replace permissions: the MB-Dev migration identity must have no login or
+rights on MB-Prod, and the reverse (`database/least-privilege.sql`).
 
 Never drop, truncate or reseed MB-Prod. `Down` migrations exist but discard lifecycle data;
 treat them as an emergency tool requiring a fresh backup and explicit approval.
@@ -142,11 +190,15 @@ treat them as an emergency tool requiring a fresh backup and explicit approval.
 ## 7. SMTP and email isolation
 
 - Messages are **plain text only**, so nothing a customer types can become HTML or a link.
-  Header values are flattened to one line; addresses go through MailKit's parser. The
-  customer's email becomes `Reply-To`.
+  Header values are flattened to one line; addresses go through MailKit's parser. In
+  production the customer's email becomes `Reply-To`.
 - Each notification has a stable `Message-ID` (`<quote-{id}@notifications.mopboss>`).
-- Non-production subjects start with `[TEST]`, and non-production sends to a non-local relay
-  go only to `DevelopmentRecipientOverride`.
+- Non-production messages cannot be mistaken for real ones or answered to a customer: the
+  subject starts with `[TEST]`, the body opens with a "TEST MESSAGE (not Production)" line,
+  there is **no `Reply-To`**, and sends to a non-local relay go only to
+  `DevelopmentRecipientOverride`, which must differ from `To` and `From`.
+- Without SMTP settings (allowed outside production only) nothing is emailed. Those rows are
+  recorded as `Suppressed` with `LastError = NotSent:LoggingNotifier`, never as `Sent`.
 - Sender-domain authentication (SPF, DKIM, DMARC) is provider- and DNS-specific and is a
   launch task.
 
@@ -154,21 +206,26 @@ treat them as an emergency tool requiring a fresh backup and explicit approval.
 
 | Field | Meaning |
 | --- | --- |
-| `Status` | `Pending`, `Sent` or `Failed` (terminal) |
+| `Status` | `Pending`; `Sent` (the SMTP server accepted it); `Failed` (gave up: **Linda has not received it**); `HandledManually` (an operator passed it on another way); `Suppressed` (non-production log-only, never emailed) |
 | `Attempts`, `NextAttemptAtUtc` | Bounded exponential backoff: 30 s, 1 m, 2 m, 4 m, 8 m, 16 m, 32 m (±20% jitter, cap 1 h). The 8th failure, about 63 minutes after the first, marks it `Failed` |
-| `LockToken`, `LockedUntilUtc` | A worker's lease (120 s); expired leases are picked up again, so the queue recovers after crashes and restarts |
+| `LockToken`, `LockedUntilUtc` | A worker's lease (120 s). Rows are claimed one at a time with a fresh clock, and a send must finish within 75% of the lease or it is abandoned and retried, so a lease never expires while its sender is still working. Expired leases are picked up again, so the queue recovers after crashes and restarts. A worker that has lost its lease records nothing |
 | `ConcurrencyStamp` | Optimistic concurrency: two workers or instances cannot both claim a row |
 | `SentAtUtc` | When the SMTP server accepted the message |
 | `LastError` | Exception type and SMTP codes only, e.g. `SmtpCommand:RecipientNotAccepted:550`. Never message text, which can contain addresses |
 
-- Relay rejections (5xx mailbox, sender or recipient refused) are **permanent** and fail
-  immediately. Timeouts, connection, TLS and authentication problems are retried.
+- Any SMTP 5xx reply and malformed server replies are **permanent** and fail immediately.
+  4xx replies, timeouts, connection, TLS and authentication problems are retried.
 - On shutdown, an in-flight send releases its lease without counting the attempt.
 - **Duplicates are possible and accepted.** SMTP has no exactly-once delivery. If the relay
   accepts a message and the process stops before recording `Sent`, the message is resent
   after the lease expires. Both copies share one `Message-ID`. The outbox, the unique
-  `QuoteRequestId` index, idempotency keys and the 10-minute resubmit check prevent every
-  other duplicate path.
+  `QuoteRequestId` index, durable idempotency keys (their own table: a retried key returns
+  the original reference, a reused key with a different request is refused) and the
+  10-minute resubmit check prevent every other duplicate path. Submissions of the same
+  request are serialised with a SQL Server application lock, so concurrent identical
+  submissions under different keys still produce one quote. The submission transaction runs
+  inside EF Core's retrying execution strategy; if a commit acknowledgement is lost and the
+  transaction retried, the idempotency key turns the retry into a replay, not a second quote.
 
 ## 9. Hosting requirements (provider-neutral)
 
@@ -197,8 +254,9 @@ Required before the first production migration and ongoing:
 | Signal | Source | Alert when |
 | --- | --- | --- |
 | API up | `GET /health/live` → `Healthy` | Not 200 |
-| Database and email queue | `GET /health/ready` → `Healthy` / `Degraded` / `Unhealthy` | `Unhealthy` (database down, HTTP 503), or `Degraded` (a notification failed permanently in the last 7 days, or one has been due for over 30 minutes) |
+| Database, schema and email queue | `GET /health/ready` → `Healthy` / `Degraded` / `Unhealthy` | `Unhealthy` (HTTP 503: database down, or migrations not exactly those this build expects), or `Degraded` (any `Failed` notification not yet resolved, however old, or one due for over 30 minutes) |
 | Permanent failure | Log at Error: "Notification for quote {Reference} FAILED permanently…" | Any occurrence |
+| Unresolved failures | Log at Error at start-up and every `Notifications__FailureReminderMinutes` (60): "ACTION NEEDED: {Count} quote request(s) were never emailed to Linda: {References}…" | Any occurrence. It stops only when each row is retried successfully or marked handled (§12) |
 | Retries | Log at Warning: "…failed (attempt n of 8)…" | Sustained for over 30 minutes |
 | Worker problems | Log at Error: "Notification worker cycle failed" | Repeated |
 
@@ -207,14 +265,25 @@ phone numbers or email addresses.
 
 ## 12. Operational recovery
 
-Use an operator identity, never the runtime one. Queries are in `database/operations.sql`.
+Use an operator identity, never the runtime one. Read-only queries are in
+`database/operations-readonly.sql` (A–D). Changes are in `database/operations-recovery.sql`,
+one section per task: select a section from `BEGIN` to `END`, set its variables, and run only
+that. Each section does nothing until its variables are set, runs in a transaction and
+rolls back unless exactly the expected number of rows changed. Running the whole file by
+accident changes nothing (tested).
 
-- **Some notifications failed** (A, B): find references and errors.
-- **Cause fixed, e.g. SMTP credentials or provider outage** (C or D): requeue. Linda may receive
-  a second copy of any message that actually got through earlier.
-- **Cannot email at all**: read the request (E), pass it to Linda by a secure route, then mark
-  it `HandledManually`. It stays `Failed` and stops degrading health.
-- **Status changes** (F): New → Contacted → Quoted → Scheduled → Completed, or Cancelled.
+- **What failed?** Query A (overview) and B (requests Linda has not received, with error codes).
+- **Cause fixed** (e.g. SMTP credentials, provider outage): `retry-one`, or `retry-all-failed`
+  with `@ExpectedRows` set to B's count. Linda may receive a second copy of any message that
+  actually got through earlier.
+- **Cannot email at all**: read the request (query D; contains customer data, never paste it
+  into tickets or chat), pass it to Linda by a secure route, then `mark-handled`. The row
+  becomes `HandledManually`: excluded from retries, health and reminders.
+- **Re-send one that was handled by hand** (exceptional): `override-requeue-handled`, which
+  needs `@ConfirmResendAlreadyHandled = 1`.
+- **Status changes**: `set-status` (New → Contacted → Quoted → Scheduled → Completed, or
+  Cancelled).
+- Query C lists `HandledManually` and `Suppressed` rows for review.
 
 ## 13. Privacy and data handling
 
@@ -252,7 +321,7 @@ Covered and tested: strict per-environment configuration; no fallback databases;
 DB and SMTP in production; least-privilege runtime identity template; server-side validation
 mirroring the form, with choices limited to the shared option list; unknown JSON properties
 rejected; control characters rejected in contact fields; 16 KB request limit on the quote
-endpoint (64 KB global); per-IP rate limit (5 per 10 minutes) with forwarded headers trusted
+endpoint (64 KB global), answered 413 through real Kestrel (tested); per-IP rate limit (5 per 10 minutes) with forwarded headers trusted
 only from configured proxies; honeypot; idempotency keys; parameterised EF Core queries only;
 plain-text email; CORS allow-list (not access control: anyone can POST directly, which is why
 the other controls exist); security headers and CSP on the site and API; ProblemDetails
@@ -267,8 +336,8 @@ Known limitations, accepted for now:
   spam appears.
 - The rate limit is in memory, per instance, and resets on restart.
 - `/health/*` is public but reveals only a status word. Restrict it at the proxy if preferred.
-- The 413 response for oversized bodies comes from Kestrel and is not covered by the
-  in-process tests.
+- Migration guards (target variables, preflight, runner) stop operator mistakes, not a
+  determined operator; database permissions are the boundary.
 
 ## 15. Manual verification checklist
 
@@ -288,19 +357,24 @@ Known limitations, accepted for now:
 ```bash
 # Website
 cd mopboss.client
-npm run lint && npm run typecheck && npm test && npm run build
+npm run lint && npm run typecheck && npm test
+npm run check:build-guard                      # next build refuses unsafe settings
 npm run build:e2e && npm run test:e2e          # Playwright: Chromium, Firefox, WebKit
 
 # API (Docker needed for the SQL Server tests)
 dotnet test MopBoss.Server.Tests
-dotnet test MopBoss.Server.Tests --filter "Category!=SqlServer"   # without Docker
 dotnet format MopBoss.Server/MopBoss.Server.csproj --verify-no-changes
 ```
 
-Local results at the end of Phase 3: Vitest 78 passed; .NET 67 passed (including 7 against
-SQL Server 2022 in a container); Playwright 47 passed and 4 intentionally skipped across
-three engines; Lighthouse mobile on a local production build: 100 / 100 / 100 / 100 on `/`
-and `/quote`. Playwright's WebKit is not iPhone Safari.
+Local results after the review remediation: Vitest 84 passed; build guard 9 of 9 unsafe
+configurations refused; .NET 134 passed (including SQL Server 2022 container tests, the
+least-privilege template, migration guard and preflight, and body limits through real
+Kestrel); Playwright 47 passed and 4 intentionally skipped across three engines. The guarded
+migration runner was also run by hand against a throwaway local SQL Server container
+(apply, rerun, and refusal on the wrong database). Lighthouse mobile at the end of Phase 3
+on a local production build: 100 / 100 / 100 / 100 on `/` and `/quote` (not re-run; the
+only visual change since is the 12px cap on the magnetic CTA). Playwright's WebKit is not
+iPhone Safari.
 
 ## 17. Requirement status after Phase 3
 
@@ -312,12 +386,12 @@ and `/quote`. Playwright's WebKit is not iPhone Safari.
 | Lifecycle New → Cancelled, no public status endpoint | Done (operator SQL) |
 | Transactional outbox, worker, retries, terminal failures, restart recovery, concurrency, shutdown | Done, tested (in-memory and SQL Server, end to end with SMTP) |
 | Truthful demo, live, validation, rate-limit, network, server, uncertain and missing-config states | Done, unit and browser tested |
-| Production cannot fall back to the demo | Done (build guard and runtime "unavailable") |
+| Production cannot fall back to the demo | Done: every build states its deployment; demo only when explicit and outside production; runtime fails closed to "unavailable" |
 | Environment isolation MB-Dev / MB-Prod, no fallback, startup validation | Done, tested |
-| Least-privilege identities, separate migration identity | Template and design-time factory; **identities not created** (blocker 3) |
+| Least-privilege identities, separate migration identity | Template (verified against the API's code paths on SQL Server) and guarded migration tooling; **identities not created** (blocker 3) |
 | Security headers, CSP, request limits, forwarded headers, logging without PII | Done, tested where observable |
 | Relational tests, SMTP capture tests, browser tests | Done |
-| CI: format, lint, types, tests, builds, migrations, vulnerabilities | Done; **first run happens when the branch is pushed** |
+| CI: format, lint, types, tests, builds, build-guard refusals, migrations, vulnerabilities | Done |
 | Backups, monitoring, hosting, DNS, SMTP provider, privacy decisions | **External, not done** |
 
 ## 18. Optional future improvements

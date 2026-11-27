@@ -7,7 +7,7 @@ Marketing site and quote-request API for **Mop Boss** (Linda Tucker, Expert Hous
 | `mopboss.client/` | The website: Next.js 16 (App Router), TypeScript, CSS Modules, statically prerendered |
 | `MopBoss.Server/` | ASP.NET Core 10 API: validates quote requests, stores them in SQL Server (MB-Dev / MB-Prod) with a notification outbox, and a background worker emails Linda |
 | `MopBoss.Server.Tests/` | xUnit tests: API, outbox, SMTP capture, and SQL Server in a disposable container |
-| `database/` | Reviewed idempotent migration script, least-privilege and operator SQL templates |
+| `database/` | Reviewed idempotent migration script, guarded migration runner and preflight, least-privilege template, read-only and recovery operator SQL |
 | `PRODUCTION_READINESS.md` | Launch blockers, configuration, migrations, recovery, monitoring, privacy checklist |
 | `docs/PHASE3_AUDIT.md` | What the Phase 2 implementation contained before hardening |
 | `design-reference/` | The approved Phase 1 design (prototype, handoff notes, brand artwork). Reference only, not built or linted |
@@ -20,34 +20,41 @@ Requires Node 22 or later.
 ```bash
 cd mopboss.client
 npm ci
-npm run dev          # http://localhost:3000
+npm run dev          # http://localhost:3000 (demo quote form, from .env.development)
 ```
 
 | Script | Does |
 | --- | --- |
 | `npm run dev` | Development server |
 | `npm run dev:audit` | Development server in content-audit mode (gold placeholder chips) |
-| `npm run build` / `npm start` | Production build and server |
+| `npm run build` / `npm start` | Build and server. `build` refuses to run unless the deployment is stated (see Settings) |
 | `npm run build:audit` | Production build in content-audit mode, for reviewing with Linda |
 | `npm run lint` | ESLint (Next.js rules + Prettier compatibility) |
 | `npm run typecheck` | Route type generation + `tsc --noEmit` (strict) |
 | `npm test` | Vitest + Testing Library |
 | `npm run format` / `format:check` | Prettier |
 | `npm run content:needed` | Regenerate `CONTENT_NEEDED.md` from the content module |
-| `npm run build:e2e` / `test:e2e` | Production build with a fake API address, then Playwright in Chromium, Firefox and WebKit |
+| `npm run build:e2e` / `test:e2e` | Preview build with a loopback fake API, then Playwright in Chromium, Firefox and WebKit |
+| `npm run check:build-guard` | Proves `next build` refuses omitted, misspelt and unsafe deployment settings |
 
 All four of `lint`, `typecheck`, `test` and `build` must pass before every commit; CI runs them too.
 
 ### Settings
 
-Copy `.env.example` to `.env.local` for local overrides. All are read at build time.
+All are read at build time and inlined. **Every `next build` must state its deployment**:
+a missing, misspelt or unsafe value stops the build (`src/lib/deployGuard.ts`), and if a
+build somehow ships without valid settings the form fails closed to "online requests
+unavailable, please call", never to the demo. `npm run dev` uses the committed
+`.env.development` (development + demo); put local overrides in `.env.development.local`.
+`.env.example` shows a production configuration.
 
 | Variable | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_DEPLOY_ENV` | `development` (default), `preview` or `production`. **A production build refuses to build** unless the API and site URLs are https and audit mode is off. |
-| `NEXT_PUBLIC_SITE_URL` | The live address, used for canonical URLs, `sitemap.xml`, `robots.txt` and social previews. Falls back to `http://localhost:3000`. |
-| `NEXT_PUBLIC_QUOTE_API_URL` | Base URL of `MopBoss.Server`. When empty outside production the form runs in **demo mode**: nothing is sent, and the confirmation says Linda has not received it. In production an empty value means "online requests unavailable, please call". |
-| `NEXT_PUBLIC_CONTENT_AUDIT` | `1` shows the prototype's gold placeholder chips wherever content is missing. Never set it for the public site. |
+| `NEXT_PUBLIC_DEPLOY_ENV` | **Required**: `development`, `preview` or `production`. |
+| `NEXT_PUBLIC_QUOTE_MODE` | `live` (default) or `demo`. Demo sends nothing and the confirmation says Linda has not received it. Only allowed outside production, and never together with an API URL. |
+| `NEXT_PUBLIC_QUOTE_API_URL` | Base URL of `MopBoss.Server`, required for `live`. Production: https and not a local address. Preview: https, or http only for a loopback test API. Never credentials in the URL. |
+| `NEXT_PUBLIC_SITE_URL` | The live address, used for canonical URLs, `sitemap.xml`, `robots.txt` and social previews. Required in production (https, not local). Falls back to `http://localhost:3000` elsewhere. |
+| `NEXT_PUBLIC_CONTENT_AUDIT` | `1` shows the prototype's gold placeholder chips wherever content is missing. Refused in production. |
 
 ### Content: nothing invented
 
@@ -84,9 +91,9 @@ dotnet run --project MopBoss.Server --launch-profile http     # http://localhost
 dotnet test MopBoss.Server.Tests                               # Docker needed for the SQL Server tests
 ```
 
-Migrations are **never applied automatically**. Review `database/MopBoss.migrations.idempotent.sql`, then follow the approval steps in [PRODUCTION_READINESS.md §6](PRODUCTION_READINESS.md#6-database-migrations-reviewed-never-automatic). `dotnet ef` uses a design-time factory and the `MOPBOSS_MIGRATIONS_CONNECTION` variable (migration identity), never the app's runtime settings.
+Migrations are **never applied automatically**, and `/health/ready` stays `Unhealthy` until the database has exactly the migrations the build expects. Review `database/MopBoss.migrations.idempotent.sql`, then follow the approval steps in [PRODUCTION_READINESS.md §6](PRODUCTION_READINESS.md#6-database-migrations-reviewed-never-automatic). Migration tooling refuses to connect unless the operator names the target: `database/Invoke-MopBossMigration.ps1 -Target Development -Database MB-Dev ...` (sqlcmd with a server-side preflight), or `dotnet ef` with `MOPBOSS_MIGRATION_TARGET` set (and `MOPBOSS_MIGRATION_AUTHORIZE_PRODUCTION=MB-Prod` for production). These guards catch mistakes; separate per-database migration identities are still what keeps MB-Dev credentials out of MB-Prod.
 
-Email: without SMTP settings, development only logs. A loopback capture service (smtp4dev, Mailpit) is allowed, and a real relay outside production requires `Smtp:DevelopmentRecipientOverride`, so development can never email Linda. Production requires SMTP with TLS. See [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) for every setting, the outbox and retry behaviour, recovery queries (`database/operations.sql`), monitoring (`/health/live`, `/health/ready`) and the privacy checklist.
+Email: without SMTP settings, development only logs, and those rows are recorded as `Suppressed` (never `Sent`). A loopback capture service (smtp4dev, Mailpit) is allowed, and a real relay outside production requires `Smtp:DevelopmentRecipientOverride` (a separate test inbox), so development can never email Linda or a customer. Production requires SMTP with TLS and the notification worker. Requests that could not be emailed keep `/health/ready` degraded and are logged as "ACTION NEEDED" at start-up and every hour until resolved. See [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) for every setting, the outbox and retry behaviour, operator SQL (`database/operations-readonly.sql`, `database/operations-recovery.sql`), monitoring (`/health/live`, `/health/ready`) and the privacy checklist.
 
 ## Still to decide
 

@@ -8,11 +8,14 @@ function watchErrors(page: Page, browserName: string, baseURL: string | undefine
   const errors: string[] = [];
   // WebKit only: a same-origin Next.js prefetch (?_rsc=) cancelled by navigation is
   // reported as an "access control" error, as a console message and an unhandled
-  // rejection. It is not a CSP or CORS failure. The pattern is pinned to this site's own
-  // origin and the exact message, so a real cross-origin or CSP failure still counts.
-  const origin = new URL(baseURL!).origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // rejection. It is not a CSP or CORS failure. Observed text:
+  //   "/127.0.0.1:3100/about?_rsc=hzcUC6YqarYE9pKE due to access control checks."
+  // (WebKit may also prefix "Fetch API cannot load http:/"). The pattern is pinned to this
+  // site's own host, an _rsc prefetch and the exact wording, so a cross-origin, CSP or
+  // any other failure still counts.
+  const host = new URL(baseURL!).host.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const prefetchAborted = new RegExp(
-    `^Fetch API cannot load ${origin}/[A-Za-z0-9/_-]*\\?_rsc=[A-Za-z0-9_-]+ due to access control checks\\.$`,
+    `^(?:Fetch API cannot load )?(?:https?:)?/{1,2}${host}/[A-Za-z0-9/_-]*\\?_rsc=[A-Za-z0-9_-]+ due to access control checks\\.$`,
   );
   const ignore = (text: string) => browserName === 'webkit' && prefetchAborted.test(text);
   page.on('console', (msg) => {
