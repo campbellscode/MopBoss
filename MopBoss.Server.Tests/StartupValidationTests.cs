@@ -53,8 +53,11 @@ public class StartupValidationTests
 
     private static SmtpOptions Smtp(string host, string? overrideTo = null, SmtpSecurity security = SmtpSecurity.StartTls) => new()
     {
-        Host = host, From = "quotes@example.test", To = "linda@example.test",
-        DevelopmentRecipientOverride = overrideTo, Security = security,
+        Host = host,
+        From = "quotes@example.test",
+        To = "linda@example.test",
+        DevelopmentRecipientOverride = overrideTo,
+        Security = security,
     };
 
     [Fact]

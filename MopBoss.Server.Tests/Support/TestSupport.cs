@@ -50,18 +50,18 @@ public static class Payloads
         string website = "",
         string service = "Deep Cleaning",
         string notes = "Two cats.") => new
-    {
-        service,
-        property = "House",
-        bedrooms = 2,
-        bathrooms = 1,
-        squareFeet = "1,000 to 2,000",
-        frequency = "Weekly",
-        contact = new { name, phone, email, zip },
-        notes,
-        website,
-        submittedAt = "2026-11-27T12:00:00.000Z",
-    };
+        {
+            service,
+            property = "House",
+            bedrooms = 2,
+            bathrooms = 1,
+            squareFeet = "1,000 to 2,000",
+            frequency = "Weekly",
+            contact = new { name, phone, email, zip },
+            notes,
+            website,
+            submittedAt = "2026-11-27T12:00:00.000Z",
+        };
 
     public static Quotes.QuoteRequestDto Dto(string name = "Dana Smith", int bedrooms = 2) => new()
     {

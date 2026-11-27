@@ -84,8 +84,12 @@ public class NotificationEmailTests
         await using var server = new FakeSmtpServer { RejectRecipients = true };
         var options = new SmtpOptions
         {
-            Host = "127.0.0.1", Port = server.Port, Security = SmtpSecurity.None,
-            From = "quotes@example.test", To = "linda@example.test", TimeoutSeconds = 10,
+            Host = "127.0.0.1",
+            Port = server.Port,
+            Security = SmtpSecurity.None,
+            From = "quotes@example.test",
+            To = "linda@example.test",
+            TimeoutSeconds = 10,
         };
         var notifier = new SmtpQuoteNotifier(Options.Create(options), new HostingEnvironment { EnvironmentName = Environments.Development });
 
