@@ -1,0 +1,350 @@
+.selfStart {
+  align-self: flex-start;
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 70px 0 84px;
+}
+
+.heroLayout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 48px 72px;
+}
+
+.heroText {
+  flex: 1.2 1 480px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.heroTitle {
+  font-size: clamp(36px, 5.6vw, 84px);
+}
+
+.lead {
+  margin: 0;
+  max-width: 520px;
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+  color: var(--color-body-grey);
+}
+
+.heroCtas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.heroVisual {
+  position: relative;
+  flex: 1 1 400px;
+  min-width: 0;
+  min-height: 540px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring {
+  width: min(580px, 104%);
+}
+
+.badge {
+  position: relative;
+  display: block;
+  width: min(460px, 82%);
+  height: auto;
+  mix-blend-mode: multiply;
+}
+
+/* ---------- Story ---------- */
+
+.story {
+  background: var(--color-blush);
+  padding: 92px 0;
+  border-top: var(--rule);
+}
+
+.storyLayout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 48px 72px;
+}
+
+.storyHead {
+  flex: 1 1 340px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-self: flex-start;
+}
+
+.storyTitle {
+  font-size: clamp(30px, 4vw, 58px);
+}
+
+.storyIntro {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--color-body-grey);
+}
+
+.storyBody {
+  flex: 1.6 1 520px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.quoteCard {
+  margin: 0;
+  background: var(--color-white);
+  border: var(--outline);
+  border-radius: var(--radius-card-lg);
+  box-shadow: var(--shadow-card);
+  padding: 34px 34px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.quoteMark {
+  font-size: 110px;
+  line-height: 0.6;
+  height: 44px;
+  color: var(--color-boss-pink);
+}
+
+.pullQuote {
+  margin: 0;
+  font-size: clamp(24px, 2.6vw, 36px);
+  line-height: 1.2;
+}
+
+.pullQuotePlaceholder {
+  font-size: clamp(24px, 2.6vw, 36px);
+  line-height: 1.2;
+  color: var(--color-placeholder-text);
+  background: var(--color-placeholder-fill);
+  border: 1.5px dashed var(--color-placeholder-border);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+.attribution {
+  font: 700 14px/1 var(--font-body);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+  gap: 18px;
+}
+
+.tileNote {
+  padding: 24px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tileNote strong {
+  margin-bottom: 0;
+}
+
+.tile {
+  padding: 24px;
+  border: var(--outline);
+  border-radius: 20px;
+  background: var(--color-white);
+}
+
+.tileTitle {
+  margin: 0 0 10px;
+  font: 700 11.5px/1.3 var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-deep-pink);
+}
+
+.tile p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ---------- The Boss Standard ---------- */
+
+.standard {
+  position: relative;
+  background: var(--color-ink);
+  color: var(--color-white);
+  padding: 100px 0 96px;
+}
+
+.standardStack {
+  display: flex;
+  flex-direction: column;
+  gap: 52px;
+}
+
+.standardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.standardHeadText {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.standardTitle {
+  font-size: clamp(34px, 5vw, 72px);
+}
+
+.values {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 32px 36px;
+}
+
+.value {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 2px solid var(--color-boss-pink);
+  padding-top: 22px;
+}
+
+.value:nth-child(even) {
+  margin-top: 36px;
+}
+
+.valueNum {
+  font-size: 54px;
+  line-height: 1;
+  color: var(--color-boss-pink);
+}
+
+.valueTitle {
+  font-size: 21px;
+  line-height: 1.15;
+}
+
+.valueBody {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--color-body-on-ink);
+}
+
+/* ---------- One call, one boss ---------- */
+
+.contact {
+  padding: 124px 0 92px;
+}
+
+.contactLayout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 28px;
+}
+
+.photoSlot {
+  flex: 1 1 320px;
+  min-width: 0;
+  min-height: 340px;
+  border: 2px dashed var(--color-placeholder-border);
+  border-radius: var(--radius-card-lg);
+  background: repeating-linear-gradient(135deg, #fff6d9 0 18px, #fffdf3 18px 36px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.photoChip {
+  background: var(--color-white);
+}
+
+.photo {
+  flex: 1 1 320px;
+  min-width: 0;
+  border: var(--outline);
+  border-radius: var(--radius-card-lg);
+  overflow: hidden;
+}
+
+.photoImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.contactText {
+  flex: 1.5 1 460px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 12px 0;
+}
+
+.contactTitle {
+  font-size: clamp(28px, 3.6vw, 52px);
+}
+
+.contactBody {
+  margin: 0;
+  max-width: 540px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--color-body-grey);
+}
+
+.bigPhone {
+  font-size: clamp(26px, 3.4vw, 46px);
+  color: var(--color-deep-pink);
+  text-decoration: none;
+}
+
+.bigPhone:hover {
+  color: var(--color-ink);
+}
+
+.factChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.factLine {
+  font-size: 16px;
+  color: var(--color-body-grey);
+}
