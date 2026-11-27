@@ -258,8 +258,10 @@
   color: var(--color-white);
 }
 
-.mobileOnly {
-  display: none;
+@media (min-width: 768px) {
+  .mobileOnly {
+    display: none !important;
+  }
 }
 
 /* ---------- Mobile composition ---------- */
@@ -267,15 +269,6 @@
 @media (max-width: 767.98px) {
   .desktopOnly {
     display: none !important;
-  }
-
-  .mobileOnly {
-    display: revert;
-  }
-
-  .decor.mobileOnly,
-  .ringMobile {
-    display: block;
   }
 
   .hero {
@@ -373,8 +366,7 @@
     transform: translateY(4px);
   }
 
-  .underline.mobileOnly {
-    display: inline-flex;
+  .underline {
     align-self: center;
   }
 

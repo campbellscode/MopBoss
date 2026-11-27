@@ -1,0 +1,142 @@
+.section {
+  position: relative;
+  background: var(--color-ink);
+  color: var(--color-white);
+  padding: 104px 0 96px;
+}
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 56px 72px;
+}
+
+.head {
+  flex: 1 1 380px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-self: flex-start;
+}
+
+.title {
+  font-size: clamp(36px, 5.2vw, 76px);
+}
+
+.body {
+  margin: 0;
+  max-width: 420px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--color-body-on-ink);
+}
+
+.chip {
+  align-self: flex-start;
+}
+
+.grid {
+  flex: 1.3 1 520px;
+  min-width: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+  gap: 44px 40px;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 2px solid var(--color-boss-pink);
+  padding-top: 22px;
+}
+
+.item > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item:nth-child(even) {
+  margin-top: 56px;
+}
+
+.num {
+  font-size: 54px;
+  line-height: 1;
+  color: var(--color-boss-pink);
+}
+
+.itemTitle {
+  font-size: 21px;
+  line-height: 1.15;
+}
+
+.itemBody {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--color-body-on-ink);
+}
+
+@media (max-width: 767.98px) {
+  .section {
+    padding: 60px 0 54px;
+  }
+
+  .layout {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 30px;
+    padding: 0 var(--gutter-mobile);
+  }
+
+  .head {
+    flex: none;
+    gap: 14px;
+  }
+
+  .title {
+    font-size: 34px;
+  }
+
+  .grid {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .item {
+    flex-direction: row;
+    gap: 16px;
+    padding-top: 18px;
+  }
+
+  .item:nth-child(even) {
+    margin-top: 0;
+  }
+
+  .item > div:last-child {
+    gap: 8px;
+  }
+
+  .num {
+    flex: none;
+    width: 34px;
+    font-size: 44px;
+    line-height: 0.9;
+  }
+
+  .itemTitle {
+    font-size: 18px;
+  }
+
+  .itemBody {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+}

@@ -1,0 +1,160 @@
+.section {
+  padding: 108px 0 96px;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 48px 72px;
+  align-items: flex-end;
+}
+
+.headCol {
+  flex: 1.5 1 560px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.title {
+  font-size: clamp(28px, 3.7vw, 54px);
+  line-height: 1.06;
+}
+
+.bodyCol {
+  flex: 1 1 360px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.body {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--color-body-grey);
+}
+
+.pointsWrap {
+  margin-top: 60px;
+}
+
+.points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  border-top: var(--rule);
+  border-bottom: var(--rule);
+}
+
+.point {
+  padding: 30px 28px;
+  display: flex;
+}
+
+.point:first-child {
+  padding-left: 0;
+}
+
+.point:last-child {
+  padding-right: 0;
+}
+
+.point + .point {
+  border-left: var(--rule);
+}
+
+.num {
+  display: none;
+}
+
+.pointText {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pointTitle {
+  font-size: 22px;
+}
+
+.pink {
+  color: var(--color-deep-pink);
+}
+
+.pointBody {
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--color-body-grey);
+}
+
+@media (max-width: 767.98px) {
+  .section {
+    padding: 60px var(--gutter-mobile) 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+
+  .top,
+  .pointsWrap {
+    display: block;
+    padding: 0;
+    margin: 0;
+  }
+
+  .headCol {
+    gap: 14px;
+  }
+
+  .title {
+    font-size: 28px;
+    line-height: 1.08;
+  }
+
+  .body {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .points {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 0;
+  }
+
+  .point,
+  .point:first-child,
+  .point:last-child,
+  .point + .point {
+    align-items: baseline;
+    gap: 14px;
+    padding: 18px 0;
+    border-left: 0;
+    border-bottom: var(--rule);
+  }
+
+  .num {
+    display: block;
+    flex: none;
+    width: 34px;
+    font-size: 30px;
+  }
+
+  .pointText {
+    gap: 6px;
+  }
+
+  .pointTitle {
+    font-size: 19px;
+  }
+
+  .pointBody {
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+}

@@ -1,0 +1,21 @@
+.fringe {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -29px;
+  height: 30px;
+  background: radial-gradient(circle at 50% 0, var(--color-ink) 0 27px, #0000 28px);
+  background-size: 56px 30px;
+  background-repeat: repeat-x;
+  pointer-events: none;
+}
+
+@media (max-width: 767.98px) {
+  .fringe {
+    bottom: -23px;
+    height: 24px;
+    background: radial-gradient(circle at 50% 0, var(--color-ink) 0 21px, #0000 22px);
+    background-size: 44px 24px;
+    background-repeat: repeat-x;
+  }
+}
