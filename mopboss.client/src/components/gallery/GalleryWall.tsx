@@ -3,27 +3,11 @@
 import Image from 'next/image';
 import { useState, type ReactNode } from 'react';
 import { Sparkle } from '@/components/ui';
-import { galleryPage, type PhotoPair } from '@/content';
+import { galleryPage } from '@/content';
+import type { Tile } from './tiles';
 import styles from './GalleryPage.module.css';
 
 const cx = (...parts: Array<string | false | undefined>) => parts.filter(Boolean).join(' ');
-
-export type Tile =
-  | { kind: 'photo'; category: string; pair: PhotoPair }
-  | { kind: 'placeholder'; category: string; n: string };
-
-/** Audit-mode stand-ins, matching the prototype's six placeholder tiles. */
-export const placeholderTiles: Tile[] = [
-  ['Kitchens', '01'],
-  ['Bathrooms', '02'],
-  ['Living spaces', '03'],
-  ['Kitchens', '04'],
-  ['Move-outs', '05'],
-  ['Bathrooms', '06'],
-].map(([category, n]): Tile => ({ kind: 'placeholder', category, n }));
-
-export const photoTiles = (pairs: readonly PhotoPair[]): Tile[] =>
-  pairs.map((pair): Tile => ({ kind: 'photo', category: pair.category, pair }));
 
 /** Filterable before/after wall. Chips are toggle buttons with aria-pressed. */
 export function GalleryWall({

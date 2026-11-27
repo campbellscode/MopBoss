@@ -4,7 +4,8 @@ import { RevealSlider } from '@/components/reveal/RevealSlider';
 import { CtaBand } from '@/components/sections/CtaBand';
 import { Eyebrow, SectionHeading } from '@/components/ui';
 import { contentAudit, galleryPage, photoPairs } from '@/content';
-import { GalleryWall, photoTiles, placeholderTiles } from './GalleryWall';
+import { GalleryWall } from './GalleryWall';
+import { photoTiles, placeholderTiles } from './tiles';
 import styles from './GalleryPage.module.css';
 
 /**
