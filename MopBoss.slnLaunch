@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "Mop Boss (site + API)",
+    "Projects": [
+      {
+        "Path": "MopBoss.Server\\MopBoss.Server.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
+      },
+      {
+        "Path": "mopboss.client\\mopboss.client.esproj",
+        "Action": "Start",
+        "DebugTarget": "localhost (Edge)"
+      }
+    ]
+  }
+]

@@ -95,6 +95,15 @@ Migrations are **never applied automatically**, and `/health/ready` stays `Unhea
 
 Email: without SMTP settings, development only logs, and those rows are recorded as `Suppressed` (never `Sent`). A loopback capture service (smtp4dev, Mailpit) is allowed, and a real relay outside production requires `Smtp:DevelopmentRecipientOverride` (a separate test inbox), so development can never email Linda or a customer. Production requires SMTP with TLS and the notification worker. Requests that could not be emailed keep `/health/ready` degraded and are logged as "ACTION NEEDED" at start-up and every hour until resolved. See [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) for every setting, the outbox and retry behaviour, operator SQL (`database/operations-readonly.sql`, `database/operations-recovery.sql`), monitoring (`/health/live`, `/health/ready`) and the privacy checklist.
 
+## Visual Studio (F5)
+
+Open `MopBoss.slnx` in Visual Studio 2022 17.11+ or 2026 with the **ASP.NET and web development** and **Node.js development** workloads.
+
+1. In the toolbar's startup dropdown (next to the green Play button) choose **Mop Boss (site + API)**. This shared profile lives in `MopBoss.slnLaunch`.
+2. Press F5. Visual Studio starts `MopBoss.Server` with its `https` profile (`https://localhost:7019`, no browser) and runs `npm run dev` for `mopboss.client`, then opens `http://localhost:3000` in Edge with the JavaScript debugger attached. The test project is not started.
+
+The browser comes from `mopboss.client/.vscode/launch.json` (`localhost (Edge)` or `localhost (Chrome)`). Without that file Visual Studio reports "The startup project cannot be launched". The site's form stays in demo mode unless `mopboss.client/.env.development.local` sets `NEXT_PUBLIC_QUOTE_MODE=live` and `NEXT_PUBLIC_QUOTE_API_URL=https://localhost:7019`.
+
 ## Still to decide
 
 See the launch blockers at the top of [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md): hosting, domain and TLS, MB-Prod identities and backups, SMTP provider and Linda's address, monitoring, privacy decisions, and everything in `CONTENT_NEEDED.md`.
